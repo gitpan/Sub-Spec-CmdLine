@@ -2,7 +2,7 @@ NAME
     Sub::Spec::CmdLine - Access Perl subs via command line
 
 VERSION
-    version 0.01
+    version 0.02
 
 SYNOPSIS
     In your module:
@@ -16,6 +16,7 @@ SYNOPSIS
              arg  => ...,
              arg2 => ...
          },
+         ...
      };
      sub foo {
         ...
@@ -28,7 +29,6 @@ SYNOPSIS
 
      #!/usr/bin/perl
      use Sub::Spec::CmdLine qw(run);
-     use YourModule;
      run(module=>'YourModule', sub=>'foo');
 
     In the command-line:
@@ -36,11 +36,32 @@ SYNOPSIS
      % script.pl --help
      % script.pl --arg value --arg2 '[an, array, in, yaml, syntax]' ...
 
+    For running multiple subs, in your script:
+
+     use Sub::Spec::CmdLine qw(run);
+     run(subcommands => {
+         foo => { module=>'YourModule', sub=>'foo'},
+         bar => { module=>'YourModule', sub=>'bar'},
+         ...
+     });
+
+    In the command-line:
+
+     % script.pl --help
+     % script.pl --list
+     % script.pl foo --help
+     % script.pl foo --arg value --arg2 ...
+     % script.pl bar --blah ...
+
 DESCRIPTION
+    This module utilize sub specs (as defined by Sub::Spec) to let your subs
+    be accessible from the command-line.
+
+    This module uses Log::Any logging framework. Use something like
+    Log::Any::App, etc to see more logging statements for debugging.
+
     NOTE: This module is not ready for public consumption yet. It will be
     after Data::Sah and Sub::Spec is released.
-
-    This module uses Log::Any logging framework.
 
 FUNCTIONS
     None of the functions are exported by default, but they are exportable.
@@ -56,7 +77,7 @@ FUNCTIONS
 
     Why would one use this function instead of using Getopt::Long directly?
     We want YAML parsing (ability to pass data structures via command line),
-    parsing of arg_order and arg_greedy, stricter behaviour (dies on error).
+    parsing of arg_pos and arg_greedy, stricter behaviour (dies on error).
 
     One problem with Getopt::Long: all options get set to undef even if not
     specified. So currently we delete undef keys in %$args.

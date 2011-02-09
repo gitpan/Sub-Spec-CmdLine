@@ -1,7 +1,4 @@
 package Sub::Spec::CmdLine;
-BEGIN {
-  $Sub::Spec::CmdLine::VERSION = '0.02';
-}
 # ABSTRACT: Access Perl subs via command line
 
 use 5.010;
@@ -87,12 +84,12 @@ sub parse_argv {
 
     $log->tracef("tmp args result (after YAML conversion): %s", $args);
 
-    # process arg_pos
+    # process arg_order
   ARGV:
     for my $i (reverse 0..@$argv-1) {
         while (my ($name, $schema) = each %$spec_args) {
             my $ah0 = $schema->{attr_hashes}[0];
-            my $o = $ah0->{arg_pos};
+            my $o = $ah0->{arg_order};
             if (defined($o) && $o == $i) {
                 die "You specified option --$name but also argument #".
                     ($i+1)."\n" if defined($args->{$name});
@@ -106,7 +103,7 @@ sub parse_argv {
         }
     }
 
-    $log->tracef("tmp args result (after arg_pos processing): %s, argv: %s",
+    $log->tracef("tmp args result (after arg_order processing): %s, argv: %s",
                  $args, $argv);
     die "Error: extra argument(s): ".join(", ", @$argv)."\n" if @$argv;
 
@@ -153,8 +150,8 @@ sub gen_usage($;$) {
     for my $name (sort {
         (($args->{$a}{attr_hashes}[0]{arg_category} // "") cmp
              ($args->{$b}{attr_hashes}[0]{arg_category} // "")) ||
-                 (($args->{$a}{attr_hashes}[0]{arg_pos} // 9999) <=>
-                      ($args->{$b}{attr_hashes}[0]{arg_pos} // 9999)) ||
+                 (($args->{$a}{attr_hashes}[0]{arg_order} // 9999) <=>
+                      ($args->{$b}{attr_hashes}[0]{arg_order} // 9999)) ||
                           ($a cmp $b) } keys %$args) {
         my $arg = $args->{$name};
         my $ah0 = $arg->{attr_hashes}[0];
@@ -177,7 +174,7 @@ sub gen_usage($;$) {
             $arg_desc  .= "[" . $arg->{type} . "]";
         }
 
-        my $o = $ah0->{arg_pos};
+        my $o = $ah0->{arg_order};
         my $g = $ah0->{arg_greedy};
 
         $arg_desc .= " $ah0->{summary}" if $ah0->{summary};
@@ -363,17 +360,7 @@ _
 }
 
 1;
-
-
-=pod
-
-=head1 NAME
-
-Sub::Spec::CmdLine - Access Perl subs via command line
-
-=head1 VERSION
-
-version 0.02
+__END__
 
 =head1 SYNOPSIS
 
@@ -436,9 +423,11 @@ L<Log::Any::App>, etc to see more logging statements for debugging.
 NOTE: This module is not ready for public consumption yet. It will be after
 L<Data::Sah> and L<Sub::Spec> is released.
 
+
 =head1 FUNCTIONS
 
 None of the functions are exported by default, but they are exportable.
+
 
 =head2 parse_argv(\@argv, $sub_spec) => \%args
 
@@ -452,7 +441,7 @@ Note: As with GetOptions, this function modifies its argument, @argv.
 
 Why would one use this function instead of using Getopt::Long directly? We want
 YAML parsing (ability to pass data structures via command line), parsing of
-arg_pos and arg_greedy, stricter behaviour (dies on error).
+arg_order and arg_greedy, stricter behaviour (dies on error).
 
 One problem with Getopt::Long: all options get set to undef even if not
 specified. So currently we delete undef keys in %$args.
@@ -545,19 +534,4 @@ L<Sub::Spec::Pod>
 
 L<MooseX::Getopt>
 
-=head1 AUTHOR
-
-Steven Haryanto <stevenharyanto@gmail.com>
-
-=head1 COPYRIGHT AND LICENSE
-
-This software is copyright (c) 2011 by Steven Haryanto.
-
-This is free software; you can redistribute it and/or modify it under
-the same terms as the Perl 5 programming language system itself.
-
 =cut
-
-
-__END__
-

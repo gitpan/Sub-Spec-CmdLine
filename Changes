@@ -1,5 +1,12 @@
 Revision history for Sub::Spec::CmdLine
 
+0.02     2011-02-09
+
+         Incompatible change: rename arg_order to arg_pos.
+
+         Documentation.
+
+
 0.01     2011-02-09
 
          First release.
