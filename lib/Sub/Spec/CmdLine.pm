@@ -1,6 +1,6 @@
 package Sub::Spec::CmdLine;
 BEGIN {
-  $Sub::Spec::CmdLine::VERSION = '0.02';
+  $Sub::Spec::CmdLine::VERSION = '0.03';
 }
 # ABSTRACT: Access Perl subs via command line
 
@@ -135,8 +135,8 @@ sub gen_usage($;$) {
     my $usage = "";
 
     if ($sub_spec->{summary}) {
-        $usage .= ($sub_spec->{_module} ? "$sub_spec->{_module}::" : "") .
-            ($sub_spec->{_sub} ? "$sub_spec->{_sub} - " : "") .
+        $usage .= ($sub_spec->{_package} ? "$sub_spec->{_package}::" : "") .
+            ($sub_spec->{name} ? "$sub_spec->{name} - " : "") .
                 "$sub_spec->{summary}\n\n";
     }
 
@@ -149,7 +149,10 @@ sub gen_usage($;$) {
     my $args  = $sub_spec->{args} // {};
     my $rargs = $sub_spec->{required_args};
     $args = { map {$_ => _parse_schema($args->{$_})} keys %$args };
+    my $has_cat = grep { $_->{attr_hashes}[0]{arg_category} }
+        values %$args;
     my $prev_cat;
+    my $noted_star_req;
     for my $name (sort {
         (($args->{$a}{attr_hashes}[0]{arg_category} // "") cmp
              ($args->{$b}{attr_hashes}[0]{arg_category} // "")) ||
@@ -161,8 +164,12 @@ sub gen_usage($;$) {
 
         my $cat = $ah0->{arg_category} // "";
         if (!defined($prev_cat) || $prev_cat ne $cat) {
-            $usage .= ($cat ? "$cat options" : "Options") .
-                ": (* denotes required options):\n";
+            $usage .= "\n" if defined($prev_cat);
+            $usage .= ($cat ? ucfirst("$cat options") :
+                           ($has_cat ? "General options" : "Options"));
+            $usage .= " (* denotes required options)"
+                unless $noted_star_req++;
+            $usage .= ":\n";
             $prev_cat = $cat;
         }
 
@@ -182,8 +189,8 @@ sub gen_usage($;$) {
 
         $arg_desc .= " $ah0->{summary}" if $ah0->{summary};
         $arg_desc .= " (one of: ".
-            Data::Dump::Partial::dumpp($ah0->{choices}).")"
-                  if defined($ah0->{choices});
+            Data::Dump::Partial::dumpp($ah0->{in}).")"
+                  if defined($ah0->{in});
         $arg_desc .= " (default: ".
             Data::Dump::Partial::dumpp($ah0->{default}).")"
                   if defined($ah0->{default});
@@ -373,7 +380,7 @@ Sub::Spec::CmdLine - Access Perl subs via command line
 
 =head1 VERSION
 
-version 0.02
+version 0.03
 
 =head1 SYNOPSIS
 

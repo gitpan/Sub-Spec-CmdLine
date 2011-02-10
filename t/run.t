@@ -59,7 +59,7 @@ test_run(name      => 'help message',
          args      => {module=>'Foo', sub=>'ok'},
          argv      => [qw/--help/],
          exit_code => 0,
-         output_re => qr/Options:/,
+         output_re => qr/^Options/m,
      );
 test_run(name      => 'missing arg = error',
          args      => {module=>'Foo', sub=>'ok'},

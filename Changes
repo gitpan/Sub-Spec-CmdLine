@@ -1,5 +1,12 @@
 Revision history for Sub::Spec::CmdLine
 
+0.03     2011-02-10
+
+         Formatting tweaks.
+
+         Fix schema clause ('in', not 'choices').
+
+
 0.02     2011-02-09
 
          Incompatible change: rename arg_order to arg_pos.
