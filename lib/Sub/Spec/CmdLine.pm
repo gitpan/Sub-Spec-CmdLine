@@ -1,6 +1,6 @@
 package Sub::Spec::CmdLine;
 BEGIN {
-  $Sub::Spec::CmdLine::VERSION = '0.06';
+  $Sub::Spec::CmdLine::VERSION = '0.07';
 }
 # ABSTRACT: Access Perl subs via command line
 
@@ -249,7 +249,7 @@ sub format_result {
         if (!defined($res->[2])) {
             return $res->[0] == 200 ?
                 ($opts->{default_success_message} // "") :
-                    "ERROR $res->[0]: $res->[1]";
+                    "ERROR $res->[0]: $res->[1]\n";
         }
         my $r = $res->[0] == 200 ? $res->[2] : $res;
         if ($format eq 'text') {
@@ -379,7 +379,7 @@ Sub::Spec::CmdLine - Access Perl subs via command line
 
 =head1 VERSION
 
-version 0.06
+version 0.07
 
 =head1 SYNOPSIS
 

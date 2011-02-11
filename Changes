@@ -1,5 +1,10 @@
 Revision history for Sub::Spec::CmdLine
 
+0.07     2011-02-11
+
+         Formatting fix: missing newline in error message.
+
+
 0.06     2011-02-11
 
          Add 'cmd' option to gen_usage().
