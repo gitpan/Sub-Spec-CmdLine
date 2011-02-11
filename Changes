@@ -1,5 +1,12 @@
 Revision history for Sub::Spec::CmdLine
 
+0.06     2011-02-11
+
+         Add 'cmd' option to gen_usage().
+
+         Formatting tweaks.
+
+
 0.05     2011-02-11
 
          Remove 'required_args'.

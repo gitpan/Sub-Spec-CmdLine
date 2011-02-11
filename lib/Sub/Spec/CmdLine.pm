@@ -1,6 +1,6 @@
 package Sub::Spec::CmdLine;
 BEGIN {
-  $Sub::Spec::CmdLine::VERSION = '0.05';
+  $Sub::Spec::CmdLine::VERSION = '0.06';
 }
 # ABSTRACT: Access Perl subs via command line
 
@@ -132,10 +132,13 @@ sub gen_usage($;$) {
 
     my $usage = "";
 
+    my $cmd = $opts->{cmd};
+    if ($sub_spec->{name}) {
+        $cmd = ($sub_spec->{_package} ? "$sub_spec->{_package}::" : "") .
+            $sub_spec->{name};
+    }
     if ($sub_spec->{summary}) {
-        $usage .= ($sub_spec->{_package} ? "$sub_spec->{_package}::" : "") .
-            ($sub_spec->{name} ? "$sub_spec->{name} - " : "") .
-                "$sub_spec->{summary}\n\n";
+        $usage .= ($cmd ? "$cmd - " : "") . "$sub_spec->{summary}\n\n";
     }
 
     my $desc = $sub_spec->{description};
@@ -243,14 +246,12 @@ sub format_result {
     } elsif ($format eq 'php') {
         return PHP::Serialization::serialize($res);
     } elsif ($format =~ /^(text|pretty|nopretty)$/) {
-        my $r;
-        if ($res->[0] == 200) {
-            $r = $res->[2];
-            $r //= $opts->{default_success_message}
-                if $opts->{default_success_message};
-        } else {
-            $r = defined($res->[2]) ? $res : "ERROR $res->[0]: $res->[1]";
+        if (!defined($res->[2])) {
+            return $res->[0] == 200 ?
+                ($opts->{default_success_message} // "") :
+                    "ERROR $res->[0]: $res->[1]";
         }
+        my $r = $res->[0] == 200 ? $res->[2] : $res;
         if ($format eq 'text') {
             return Data::Format::Pretty::Console::format_pretty($r);
         } elsif ($format eq 'pretty') {
@@ -378,7 +379,7 @@ Sub::Spec::CmdLine - Access Perl subs via command line
 
 =head1 VERSION
 
-version 0.05
+version 0.06
 
 =head1 SYNOPSIS
 

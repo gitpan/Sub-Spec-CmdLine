@@ -27,4 +27,4 @@ requires:
 resources:
   homepage: http://search.cpan.org/dist/Sub-Spec-CmdLine/
   repository: http://github.com/sharyanto/perl-Sub-Spec-CmdLine
-version: 0.05
+version: 0.06
