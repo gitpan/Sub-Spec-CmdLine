@@ -1,6 +1,6 @@
 package Sub::Spec::CmdLine;
 BEGIN {
-  $Sub::Spec::CmdLine::VERSION = '0.03';
+  $Sub::Spec::CmdLine::VERSION = '0.05';
 }
 # ABSTRACT: Access Perl subs via command line
 
@@ -36,7 +36,6 @@ sub parse_argv {
 
     my ($argv, $sub_spec) = @_;
     my $spec_args         = $sub_spec->{args}          // {};
-    my $spec_req_args     = $sub_spec->{required_args} // [];
 
     $spec_args = { map { $_ => _parse_schema($spec_args->{$_}) }
                        keys %$spec_args };
@@ -111,13 +110,12 @@ sub parse_argv {
     die "Error: extra argument(s): ".join(", ", @$argv)."\n" if @$argv;
 
     # check required args
-    for (@$spec_req_args) {
-        die "Missing required argument: $_\n" unless defined $args->{$_};
-        # should really be exists() instead of defined(), but doesn't work well
-        # yet
+    while (my ($name, $schema) = each %$spec_args) {
+        die "Missing required argument: $name\n"
+            if $schema->{attr_hashes}[0]{required} && !defined($args->{$name});
     }
 
-    # XXX should not really be done, at some time we might need to differentiate
+    # cleanup undefined args
     for (keys %$args) {
         delete $args->{$_} unless defined($args->{$_});
     }
@@ -211,10 +209,10 @@ sub gen_usage($;$) {
     }
 
     if ($sub_spec->{cmdline_examples}) {
-        $usage .= "Examples:\n\n";
+        $usage .= "\nExamples:\n\n";
         my $cmd = $opts->{cmd} // $0;
         for my $ex (@{ $sub_spec->{cmdline_examples} }) {
-            $usage .= "% $cmd $ex->{cmd}\n";
+            $usage .= " % $cmd $ex->{cmd}\n";
             my $desc = $ex->{description};
             if ($desc) {
                 $desc =~ s/^\n+//; $desc =~ s/\n+$//;
@@ -380,7 +378,7 @@ Sub::Spec::CmdLine - Access Perl subs via command line
 
 =head1 VERSION
 
-version 0.03
+version 0.05
 
 =head1 SYNOPSIS
 

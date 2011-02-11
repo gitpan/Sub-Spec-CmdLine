@@ -10,10 +10,9 @@ use Clone::Any qw(clone);
 use Sub::Spec::CmdLine qw(parse_argv);
 
 my $spec = {
-    required_args => [qw/arg1 arg2/],
     args => {
-        arg1 => [str => {arg_pos=>0}],
-        arg2 => [str => {arg_pos=>1}],
+        arg1 => ['str*' => {arg_pos=>0}],
+        arg2 => ['str*' => {arg_pos=>1}],
         arg3 => 'str',
     },
 };

@@ -18,10 +18,9 @@ our %SUBS;
 
 $SUBS{ok} = {
     summary => 'Always return ok',
-    required_args => [qw/arg1 arg2/],
     args => {
-        arg1 => [str => {arg_pos=>0}],
-        arg2 => [str => {arg_pos=>1}],
+        arg1 => ['str*' => {arg_pos=>0}],
+        arg2 => ['str*' => {arg_pos=>1}],
         arg3 => 'str',
     },
 };
@@ -33,9 +32,8 @@ sub ok {
 
 $SUBS{wantodd} = {
     summary => 'Return error if given an even number',
-    required_args => [qw/num/],
     args => {
-        num => [int => {arg_pos=>0}],
+        num => ['int*' => {arg_pos=>0}],
     },
 };
 sub wantodd {
