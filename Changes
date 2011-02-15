@@ -1,5 +1,10 @@
 Revision history for Sub::Spec::CmdLine
 
+0.09     2011-02-15
+
+         Add --version.
+
+
 0.08     2011-02-15
 
          Fixes for subcommands support.

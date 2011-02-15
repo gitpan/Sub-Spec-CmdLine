@@ -1,6 +1,6 @@
 package Sub::Spec::CmdLine;
 BEGIN {
-  $Sub::Spec::CmdLine::VERSION = '0.08';
+  $Sub::Spec::CmdLine::VERSION = '0.09';
 }
 # ABSTRACT: Access Perl subs via command line
 
@@ -273,6 +273,7 @@ sub run {
     Getopt::Long::Configure("pass_through", "no_permute");
     GetOptions(
         "--list|l"     => sub { $opts{action} = 'list'     },
+        "--version|v"  => sub { $opts{action} = 'version'  },
         "--help|h|?"   => sub { $opts{action} = 'help'     },
 
         "--text"       => sub { $opts{format} = 'text'     },
@@ -302,9 +303,8 @@ sub run {
     # finding out which module/sub to use
     my $subcmdname;
     my $subcmd;
-    if ($args{subcommands}) {
-        $subcmdname = shift @ARGV or die "Please specify a subcommand, ".
-            "use $0 -l to list available subcommands\n";
+    if ($args{subcommands} && @ARGV) {
+        $subcmdname = shift @ARGV;
         $subcmd = $args{subcommands}{$subcmdname};
         $subcmd or die "Unknown subcommand `$subcmdname`, please ".
             "use $0 -l to list available subcommands\n";
@@ -314,6 +314,18 @@ sub run {
         $module = $args{module};
         $sub    = $args{sub};
     }
+
+    # handle --version
+    if ($opts{action} eq 'version') {
+        no strict 'refs';
+        my $version = ${$module."::VERSION"} // "?";
+        say "Version $version";
+        if ($exit) { exit 0 } else { return 0 }
+    }
+
+    die "Please specify a subcommand, ".
+        "use $0 -l to list available subcommands\n"
+        unless $module && $sub;
 
     my $cmd = $args{cmd} // $0;
 
@@ -380,7 +392,7 @@ Sub::Spec::CmdLine - Access Perl subs via command line
 
 =head1 VERSION
 
-version 0.08
+version 0.09
 
 =head1 SYNOPSIS
 
