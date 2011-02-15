@@ -1,6 +1,6 @@
 package Sub::Spec::CmdLine;
 BEGIN {
-  $Sub::Spec::CmdLine::VERSION = '0.07';
+  $Sub::Spec::CmdLine::VERSION = '0.08';
 }
 # ABSTRACT: Access Perl subs via command line
 
@@ -270,7 +270,7 @@ sub run {
     my %args = @_;
 
     my %opts = (format => undef, action => 'run');
-    Getopt::Long::Configure("pass_through");
+    Getopt::Long::Configure("pass_through", "no_permute");
     GetOptions(
         "--list|l"     => sub { $opts{action} = 'list'     },
         "--help|h|?"   => sub { $opts{action} = 'help'     },
@@ -305,8 +305,8 @@ sub run {
     if ($args{subcommands}) {
         $subcmdname = shift @ARGV or die "Please specify a subcommand, ".
             "use $0 -l to list available subcommands\n";
-        my $subcmd = $args{subcommands}{$subcmdname};
-        $subcmd or die "Unknown subcommand `$subcmd`, please ".
+        $subcmd = $args{subcommands}{$subcmdname};
+        $subcmd or die "Unknown subcommand `$subcmdname`, please ".
             "use $0 -l to list available subcommands\n";
         $module = $subcmd->{module} // $args{module};
         $sub    = $subcmd->{sub}    // $subcmdname;
@@ -352,7 +352,7 @@ _
     }
 
     # handle per-command --help
-    if ($subcmd && $ARGV[0] =~ /^(--help|-h|-\?)$/) {
+    if ($subcmd && $ARGV[0] && $ARGV[0] =~ /^(--help|-h|-\?)$/) {
         print gen_usage($spec, {cmd=>"$cmd $subcmdname"});
         if ($exit) { exit 0 } else { return 0 }
     }
@@ -363,7 +363,8 @@ _
     my $res    = $subref->(%$args);
 
     $log->tracef("opts=%s", \%opts);
-    print format_result($res, $opts{format});
+    print format_result($res, $opts{format})
+        unless $spec->{cmdline_suppress_output};
     my $exit_code = $res->[0] == 200 ? 0 : $res->[0] - 300;
     if ($exit) { exit $exit_code } else { return $exit_code }
 }
@@ -379,7 +380,7 @@ Sub::Spec::CmdLine - Access Perl subs via command line
 
 =head1 VERSION
 
-version 0.07
+version 0.08
 
 =head1 SYNOPSIS
 

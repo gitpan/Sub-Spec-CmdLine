@@ -1,5 +1,12 @@
 Revision history for Sub::Spec::CmdLine
 
+0.08     2011-02-15
+
+         Fixes for subcommands support.
+
+         Respect spec clause: cmdline_suppress_output.
+
+
 0.07     2011-02-11
 
          Formatting fix: missing newline in error message.
