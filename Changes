@@ -1,5 +1,13 @@
 Revision history for Sub::Spec::CmdLine
 
+0.10     2011-02-15
+
+         Add strict=>0 option in parse_argv(), for use by
+         Sub::Spec::BashComplete.
+
+         Some small refactoring.
+
+
 0.09     2011-02-15
 
          Add --version.

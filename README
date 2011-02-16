@@ -2,7 +2,7 @@ NAME
     Sub::Spec::CmdLine - Access Perl subs via command line
 
 VERSION
-    version 0.09
+    version 0.10
 
 SYNOPSIS
     In your module:
@@ -66,7 +66,7 @@ DESCRIPTION
 FUNCTIONS
     None of the functions are exported by default, but they are exportable.
 
-  parse_argv(\@argv, $sub_spec) => \%args
+  parse_argv(\@argv, $sub_spec[, \%opts]) => \%args
     Parse command line argument @argv into hash %args, suitable for passing
     into subs.
 
@@ -76,11 +76,14 @@ FUNCTIONS
     Note: As with GetOptions, this function modifies its argument, @argv.
 
     Why would one use this function instead of using Getopt::Long directly?
-    We want YAML parsing (ability to pass data structures via command line),
-    parsing of arg_pos and arg_greedy, stricter behaviour (dies on error).
+    Among other reasons, we want YAML parsing (ability to pass data
+    structures via command line) and parsing of arg_pos and arg_greedy.
 
-    One problem with Getopt::Long: all options get set to undef even if not
-    specified. So currently we delete undef keys in %$args.
+    Options in %opts:
+
+    *   strict => BOOL (default 1)
+
+        If set to 0, will still return parsed argv even if there are errors.
 
   gen_usage($sub_spec) => TEXT
     Generate usage information for a sub (typically used for --help).
