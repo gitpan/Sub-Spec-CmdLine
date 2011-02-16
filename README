@@ -2,7 +2,7 @@ NAME
     Sub::Spec::CmdLine - Access Perl subs via command line
 
 VERSION
-    version 0.11
+    version 0.12
 
 SYNOPSIS
     In your module:
@@ -132,7 +132,19 @@ FUNCTIONS
 
     *   sub => STR
 
-    *   subcommands => {NAME => {module=>..., sub=>..., summary=>...}, ...}
+    *   spec => HASH | CODEREF
+
+        Instead of trying to look for the spec using module and sub, use the
+        supplied spec.
+
+    *   help => STRING | CODEREF
+
+        Instead of generating help using gen_usage() from the spec, use the
+        supplied help message (or help code, which is expected to return
+        help text).
+
+    *   subcommands => {NAME => {module=>..., sub=>..., summary=>..., ...},
+        ...}
 
         module and sub should be specified if you only have one sub to run.
         If you have several subs to run, assign each of them to a
@@ -141,9 +153,21 @@ FUNCTIONS
          summary     => 'Maintain a directory containing git repos',
          module      => 'Git::Bunch',
          subcommands => {
+           check   => { },
            backup  => { }, # module defaults to main module argument,
-           status  => { }, # sub defaults to the same name as subcommand name
+           sync    => { }, # sub defaults to the same name as subcommand name
          },
+
+        Available argument for each subcommand: module (defaults to main
+        module argument), sub (defaults to subcommand name), summary, help,
+        category (for arrangement when listing commands), run, complete_arg,
+        complete_args.
+
+    *   run => CODEREF
+
+        Instead of running command by invoking subroutine specified by
+        module and sub, run this code instead. Code is expected to return a
+        response structure ([CODE, MESSAGE, DATA]).
 
     *   exit => BOOL (optional, default 1)
 
@@ -154,7 +178,19 @@ FUNCTIONS
 
         If set to 0, do not try to require the module.
 
-    run() can also perform completion for bash (if Sub::Spec::BashCompletion
+    *   complete_arg => {ARGNAME => CODEREF, ...}
+
+        Under bash completion, when completing argument value, you can
+        supply a code to provide its completion. Code will be called with
+        %args containing word, words, arg, args.
+
+    *   complete_args => CODEREF
+
+        Under bash completion, when completing argument value, you can
+        supply a code to provide its completion. Code will be called with
+        %args containing word, words, arg, args.
+
+    run() can also perform completion for bash (if Sub::Spec::BashComplete
     is available). To get bash completion for your perlprog, just type this
     in bash:
 

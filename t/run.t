@@ -117,7 +117,7 @@ sub test_run {
         }
 
         if ($args{output_re}) {
-            like($stdout, $args{output_re}, "output_re");
+            like($stdout // "", $args{output_re}, "output_re");
         }
     };
 }
