@@ -17,7 +17,7 @@ my %module_build_args = (
     'Steven Haryanto <stevenharyanto@gmail.com>'
   ],
   'dist_name' => 'Sub-Spec-CmdLine',
-  'dist_version' => '0.13',
+  'dist_version' => '0.14',
   'license' => 'perl',
   'module_name' => 'Sub::Spec::CmdLine',
   'recommends' => {},

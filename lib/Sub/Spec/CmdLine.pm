@@ -1,6 +1,6 @@
 package Sub::Spec::CmdLine;
 BEGIN {
-  $Sub::Spec::CmdLine::VERSION = '0.13';
+  $Sub::Spec::CmdLine::VERSION = '0.14';
 }
 # ABSTRACT: Access Perl subs via command line
 
@@ -370,28 +370,29 @@ sub _run_completion {
 
     my $spec = $args{spec};
     if ($spec) {
-        # complete subcommand argument names & values
+        $log->trace("Complete subcommand argument names & values");
         print map {"$_\n"}
             Sub::Spec::BashComplete::bash_complete_spec_arg(
                 $spec,
                 {
-                    words    => $args{comp_words},
-                    cword    => $args{comp_cword},
-                    arg_sub  => $args{complete_arg},
-                    args_sub => $args{complete_args},
+                    words    => $args{words},
+                    cword    => $args{cword},
+                    arg_sub  => $args{arg_sub},
+                    args_sub => $args{args_sub},
                 },
             );
     } else {
-        # complete general options & names of subcommands
+        $log->trace("Complete general options & names of subcommands");
         my $subcommands = $args{args}{subcommands};
         if (ref($subcommands) eq 'CODE') {
             $subcommands = $subcommands->(args=>$args{args});
             die "Error: subcommands code didn't return hashref (2)\n"
                 unless ref($subcommands) eq 'HASH';
         }
+        #print "D: comp_word=$args{word}\n";
         print map {"$_\n"}
             Sub::Spec::BashComplete::_complete_array(
-                $args{comp_word},
+                $args{word},
                 [@general_opts, keys(%$subcommands)]
             );
     }
@@ -457,12 +458,6 @@ sub run {
         $comp_word  = $comp_words->[$comp_cword] // "";
 
         @ARGV = @$comp_words;
-
-        # drop $0
-        if ($comp_cword > 0) {
-            shift @$comp_words;
-            $comp_cword--;
-        }
     }
 
     my %opts = (format => undef, action => 'run');
@@ -560,10 +555,10 @@ sub run {
             spec          => $spec,
             getopts       => \%getopts,
             words         => $comp_words,
-            cword         => $comp_word ,
-            word          => $comp_cword,
-            complete_arg  => $complete_arg,
-            complete_args => $complete_args,
+            cword         => $comp_cword,
+            word          => $comp_word ,
+            arg_sub       => $complete_arg,
+            args_sub      => $complete_args,
         );
         if ($exit) { exit 0 } else { return 0 }
     }
@@ -643,7 +638,7 @@ Sub::Spec::CmdLine - Access Perl subs via command line
 
 =head1 VERSION
 
-version 0.13
+version 0.14
 
 =head1 SYNOPSIS
 

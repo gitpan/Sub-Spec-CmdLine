@@ -1,5 +1,10 @@
 Revision history for Sub::Spec::CmdLine
 
+0.14     2011-02-17
+
+         Fixes for bash completion.
+
+
 0.13     2011-02-17
 
        [INCOMPATIBLE CHANGES]

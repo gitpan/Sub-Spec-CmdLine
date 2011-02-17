@@ -20,7 +20,7 @@ our %SUBS;
 $SUBS{ok} = {
     summary => 'Always return ok',
     args => {
-        arg1 => ['str*' => {arg_pos=>0}],
+        arg1 => ['str*' => {arg_pos=>0, in=>[qw/a b c d/]}],
         arg2 => ['str*' => {arg_pos=>1}],
         arg3 => 'str',
     },
@@ -47,6 +47,40 @@ sub wantodd {
 }
 
 package main;
+
+test_complete(
+    name        => 'arg name (single sub)',
+    argv        => [],
+    args        => {module=>'Foo', sub=>'ok'},
+    comp_line   => 'CMD -',
+    comp_point0 => '     ^',
+    result      => [qw(--help -h -? --arg1 --arg2 --arg3)],
+);
+test_complete(
+    name        => 'arg value from arg spec "in" (single sub)',
+    argv        => [],
+    args        => {module=>'Foo', sub=>'ok'},
+    comp_line   => 'CMD ',
+    comp_point0 => '    ^',
+    result      => [qw(a b c d)],
+);
+test_complete(
+    name        => 'arg value from "complete_args" (single sub)',
+    argv        => [],
+    args        => {module=>'Foo', sub=>'ok', complete_args=>sub {qw(e f g h)}},
+    comp_line   => 'CMD arg1 ',
+    comp_point0 => '         ^',
+    result      => [qw(e f g h)],
+);
+test_complete(
+    name        => 'arg value from "complete_arg" (single sub)',
+    argv        => [],
+    args        => {module=>'Foo', sub=>'ok',
+                    complete_arg=>{arg2=>sub{qw(e f g h)}}},
+    comp_line   => 'CMD arg1 ',
+    comp_point0 => '         ^',
+    result      => [qw(e f g h)],
+);
 
 test_run(name      => 'single sub',
          args      => {module=>'Foo', sub=>'ok'},
@@ -76,6 +110,7 @@ test_run(name      => 'subcommands',
          args      => {module=>'Foo', subcommands=>{ok=>{}, wantodd=>{}}},
          argv      => [qw/wantodd 3/],
          exit_code => 0,
+         test_complete => 1,
      );
 
 test_run(name      => 'unknown subcommand = error',
@@ -145,7 +180,6 @@ test_run(name      => 'coderef subcommands (c)',
 # XXX test arg: spec coderef
 # XXX test arg: complete_arg, complete_args (main / per-subcommand)
 # XXX test arg: allow_unknown_args (main / per-subcommand)
-# XXX test: bash completion
 done_testing();
 
 sub test_run {
@@ -176,6 +210,25 @@ sub test_run {
             like($stdout // "", $args{output_re}, "output_re")
                 or diag("output is $stdout");
         }
+    };
+}
+
+sub test_complete {
+    my (%args) = @_;
+
+    local @ARGV = @{$args{argv}};
+    local $ENV{COMP_LINE}  = $args{comp_line};
+    local $ENV{COMP_POINT} = index($args{comp_point0}, "^");
+
+    my ($stdout, $stderr);
+    my $exit_code;
+    ($stdout, $stderr) = capture {
+        $exit_code = run(exit=>0, load=>0, %{$args{args}});
+    };
+
+    subtest "completion: $args{name}" => sub {
+        is($exit_code, 0, "exit code = 0");
+        is($stdout // "", join("", map {"$_\n"} @{$args{result}}), "result");
     };
 }
 
