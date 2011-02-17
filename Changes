@@ -1,5 +1,12 @@
 Revision history for Sub::Spec::CmdLine
 
+0.16     2011-02-17
+
+         run(): A couple more fixes for bash completion.
+
+         parse_argv(): Also add --nofoo for bool cmdline_aliases.
+
+
 0.15     2011-02-17
 
          Yet more fixes for bash completion.

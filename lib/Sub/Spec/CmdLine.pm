@@ -1,6 +1,6 @@
 package Sub::Spec::CmdLine;
 BEGIN {
-  $Sub::Spec::CmdLine::VERSION = '0.15';
+  $Sub::Spec::CmdLine::VERSION = '0.16';
 }
 # ABSTRACT: Access Perl subs via command line
 
@@ -60,15 +60,21 @@ sub parse_argv {
         my $aliases = $schema->{attr_hashes}[0]{cmdline_aliases};
         if ($aliases) {
             while (my ($alias, $alinfo) = each %$aliases) {
+                my $opt;
+                if ($schema->{type} eq 'bool' && !$alinfo->{code}) {
+                    $opt = "$alias!";
+                } else {
+                    $opt = "$alias=s";
+                }
                 if ($alinfo->{code}) {
-                    $go_spec{$alias} = sub {
+                    $go_spec{$opt} = sub {
                         $alinfo->{code}->(
                             args    => $args,
                             arg_ref => \$args->{$name[0]},
                         );
                     };
                 } else {
-                    $go_spec{$alias} = \$args->{$name[0]};
+                    $go_spec{$opt} = \$args->{$name[0]};
                 }
             }
         }
@@ -243,7 +249,7 @@ sub gen_usage($;$) {
                     "      ",
                     (length == 1 ? "-$_" : "--$_"), " ",
                     $alinfo->{summary} ? $alinfo->{summary} :
-                        " is alias for --$name",
+                        "is alias for --$name",
                     "\n"
                 );
             }
@@ -377,7 +383,7 @@ sub _run_completion {
     }
 
     my $spec = $args{spec};
-    if ($spec) {
+    if ($spec && $args{space_typed} || !$args{subcommand}) {
         $log->trace("Complete subcommand argument names & values");
         return Sub::Spec::BashComplete::bash_complete_spec_arg(
             $spec,
@@ -552,18 +558,23 @@ sub run {
     # now that we have spec, detect (2) if we're being invoked for bash
     # completion and do completion, and exit.
     if ($ENV{COMP_LINE}) {
+        $log->tracef("TMP: comp_words=%s, comp_cword=%d", $comp_words, $comp_cword);
         my $complete_arg;
         my $complete_args;
+        # user has typed 'CMD subc ^' instead of just 'CMD subc^', in the latter
+        # case we still need to complete subcommands name.
+        my $space_typed = !defined($comp_words->[$comp_cword]);
         if ($subc) {
             shift @$comp_words;
             $comp_cword-- unless $comp_cword < 1;
 
             $complete_arg    = $subc->{complete_arg};
-            $complete_args   = $subc->{complete_arg };
+            $complete_args   = $subc->{complete_args};
         }
         $complete_arg      //= $args{complete_arg};
         $complete_args     //= $args{complete_args};
         my @res = _run_completion(
+            space_typed     => $space_typed,
             parent_args     => \%args,
             spec            => $spec,
             getopts         => \%getopts,
@@ -654,7 +665,7 @@ Sub::Spec::CmdLine - Access Perl subs via command line
 
 =head1 VERSION
 
-version 0.15
+version 0.16
 
 =head1 SYNOPSIS
 
