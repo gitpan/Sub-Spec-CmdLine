@@ -1,6 +1,6 @@
 package Sub::Spec::CmdLine;
 BEGIN {
-  $Sub::Spec::CmdLine::VERSION = '0.14';
+  $Sub::Spec::CmdLine::VERSION = '0.15';
 }
 # ABSTRACT: Access Perl subs via command line
 
@@ -39,6 +39,7 @@ sub parse_argv {
                        keys %$args_spec };
     $opts //= {};
     $opts->{strict} //= 1;
+    $log->tracef("-> parse_argv(), argv=%s", $argv);
 
     my %go_spec;
 
@@ -94,18 +95,6 @@ sub parse_argv {
         }
     }
 
-    # parse YAML in remaining @argv
-    for my $i (0..@$argv-1) {
-        next unless defined($argv->[$i]);
-        eval { $argv->[$i] = YAML::Syck::Load($argv->[$i]) };
-        if ($@) {
-            $log->info("Argument #".($i+1)." doesn't contain valid YAML, ".
-                           "assuming it's literal string");
-        }
-    }
-
-    $log->tracef("tmp args result (after YAML conversion): %s", $args);
-
     # process arg_pos
   ARGV:
     for my $i (reverse 0..@$argv-1) {
@@ -119,9 +108,27 @@ sub parse_argv {
                 }
                 if ($ah0->{arg_greedy}) {
                     $args->{$name} = [splice(@$argv, $i)];
+                    my $j = $i;
+                    # convert to yaml
+                    for (@{$args->{$name}}) {
+                        eval { $_ = YAML::Syck::Load($_) };
+                        if ($@) {
+                            $log->info(
+                                "Argument #".($j+1)." doesn't contain ".
+                                    "valid YAML, assuming it's literal string");
+                            $j++;
+                        }
+                    }
                     last ARGV;
                 } else {
                     $args->{$name} = splice(@$argv, $i, 1);
+                    # convert to yaml
+                    eval { $_ = YAML::Syck::Load($_) };
+                    if ($@) {
+                        $log->info(
+                            "Argument #".($i+1)." doesn't contain ".
+                                "valid YAML, assuming it's literal string");
+                    }
                 }
             }
         }
@@ -146,6 +153,7 @@ sub parse_argv {
         delete $args->{$_} unless defined($args->{$_});
     }
 
+    $log->tracef("<- parse_argv(), args=%s", $args);
     $args;
 }
 
@@ -371,30 +379,32 @@ sub _run_completion {
     my $spec = $args{spec};
     if ($spec) {
         $log->trace("Complete subcommand argument names & values");
-        print map {"$_\n"}
-            Sub::Spec::BashComplete::bash_complete_spec_arg(
-                $spec,
-                {
-                    words    => $args{words},
-                    cword    => $args{cword},
-                    arg_sub  => $args{arg_sub},
-                    args_sub => $args{args_sub},
-                },
-            );
+        return Sub::Spec::BashComplete::bash_complete_spec_arg(
+            $spec,
+            {
+                words            => $args{words},
+                cword            => $args{cword},
+                arg_sub          => $args{arg_sub},
+                args_sub         => $args{args_sub},
+                custom_completer =>
+                    ($args{subcommand} ? $args{subcommand}{custom_completer} :
+                         undef) // $args{parent_args}{custom_completer}
+            },
+        );
     } else {
         $log->trace("Complete general options & names of subcommands");
-        my $subcommands = $args{args}{subcommands};
+        my $subcommands = $args{parent_args}{subcommands};
+        $log->tracef("subcommands=%s", $subcommands);
         if (ref($subcommands) eq 'CODE') {
-            $subcommands = $subcommands->(args=>$args{args});
+            $subcommands = $subcommands->(parent_args=>$args{parent_args});
             die "Error: subcommands code didn't return hashref (2)\n"
                 unless ref($subcommands) eq 'HASH';
         }
         #print "D: comp_word=$args{word}\n";
-        print map {"$_\n"}
-            Sub::Spec::BashComplete::_complete_array(
-                $args{word},
-                [@general_opts, keys(%$subcommands)]
-            );
+        return Sub::Spec::BashComplete::_complete_array(
+            $args{word},
+            [@general_opts, keys(%$subcommands)]
+        );
     }
 }
 
@@ -545,21 +555,28 @@ sub run {
         my $complete_arg;
         my $complete_args;
         if ($subc) {
-            $complete_arg  = $subc->{complete_arg};
-            $complete_args = $subc->{complete_arg };
+            shift @$comp_words;
+            $comp_cword-- unless $comp_cword < 1;
+
+            $complete_arg    = $subc->{complete_arg};
+            $complete_args   = $subc->{complete_arg };
         }
-        $complete_arg    //= $args{complete_arg};
-        $complete_args   //= $args{complete_args};
-        _run_completion(
-            args          => \%args,
-            spec          => $spec,
-            getopts       => \%getopts,
-            words         => $comp_words,
-            cword         => $comp_cword,
-            word          => $comp_word ,
-            arg_sub       => $complete_arg,
-            args_sub      => $complete_args,
+        $complete_arg      //= $args{complete_arg};
+        $complete_args     //= $args{complete_args};
+        my @res = _run_completion(
+            parent_args     => \%args,
+            spec            => $spec,
+            getopts         => \%getopts,
+            words           => $comp_words,
+            cword           => $comp_cword,
+            word            => $comp_word ,
+            arg_sub         => $complete_arg,
+            args_sub        => $complete_args,
+            subcommand      => $subc,
+            subcommand_name => $subc_name,
         );
+        $log->tracef("completion result: %s", \@res);
+        print map {"$_\n"} @res;
         if ($exit) { exit 0 } else { return 0 }
     }
 
@@ -598,11 +615,10 @@ sub run {
             unless $spec;
 
     # parse argv
-    my $args;
     my $popts = {};
     $popts->{strict} = 0
         if $subc->{allow_unknown_args} // $args{allow_unknown_args};
-    parse_argv(\@ARGV, $spec, $popts);
+    my $args = parse_argv(\@ARGV, $spec, $popts);
 
     # finally, run!
     my $res;
@@ -638,7 +654,7 @@ Sub::Spec::CmdLine - Access Perl subs via command line
 
 =head1 VERSION
 
-version 0.14
+version 0.15
 
 =head1 SYNOPSIS
 
@@ -849,6 +865,12 @@ arg, args.
 Under bash completion, when completing argument value, you can supply a code to
 provide its completion. Code will be called with %args containing word, words,
 arg, args.
+
+=item * custom_completer => CODEREF
+
+To be passed to BashComplete's bash_complete_spec_arg(). This can be used e.g.
+to change bash completion code (e.g. calling bash_complete_spec_arg()
+recursively) based on context.
 
 =back
 

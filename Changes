@@ -1,5 +1,16 @@
 Revision history for Sub::Spec::CmdLine
 
+0.15     2011-02-17
+
+         Yet more fixes for bash completion.
+
+         Fixed: parse_argv(): do not convert all remaining $argv to YAML so they
+         can be reused (e.g. parse_argv'd) again
+
+         run(): add option 'custom_completer' to pass to
+         Sub::Spec::BashComplete.
+
+
 0.14     2011-02-17
 
          Fixes for bash completion.

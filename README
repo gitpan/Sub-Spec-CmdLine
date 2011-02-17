@@ -2,7 +2,7 @@ NAME
     Sub::Spec::CmdLine - Access Perl subs via command line
 
 VERSION
-    version 0.14
+    version 0.15
 
 SYNOPSIS
     In your module:
@@ -199,6 +199,12 @@ FUNCTIONS
         Under bash completion, when completing argument value, you can
         supply a code to provide its completion. Code will be called with
         %args containing word, words, arg, args.
+
+    *   custom_completer => CODEREF
+
+        To be passed to BashComplete's bash_complete_spec_arg(). This can be
+        used e.g. to change bash completion code (e.g. calling
+        bash_complete_spec_arg() recursively) based on context.
 
     run() can also perform completion for bash (if Sub::Spec::BashComplete
     is available). To get bash completion for your perlprog, just type this
