@@ -2,7 +2,7 @@ NAME
     Sub::Spec::CmdLine - Access Perl subs via command line
 
 VERSION
-    version 0.16
+    version 0.17
 
 SYNOPSIS
     In your module:
@@ -70,10 +70,9 @@ FUNCTIONS
     Parse command line argument @argv into hash %args, suitable for passing
     into subs.
 
-    Uses Getopt::Long to parse the result. You can Getopt::Long::Configure
-    beforehand to modify behaviour (e.g. if you want no_permute).
+    Uses Getopt::Long to parse the result.
 
-    Note: As with GetOptions, this function modifies its argument, @argv.
+    As with GetOptions, this function modifies its argument, @argv.
 
     Why would one use this function instead of using Getopt::Long directly?
     Among other reasons, we want YAML parsing (ability to pass data

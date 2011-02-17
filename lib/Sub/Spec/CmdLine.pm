@@ -1,6 +1,6 @@
 package Sub::Spec::CmdLine;
 BEGIN {
-  $Sub::Spec::CmdLine::VERSION = '0.16';
+  $Sub::Spec::CmdLine::VERSION = '0.17';
 }
 # ABSTRACT: Access Perl subs via command line
 
@@ -383,7 +383,7 @@ sub _run_completion {
     }
 
     my $spec = $args{spec};
-    if ($spec && $args{space_typed} || !$args{subcommand}) {
+    if ($spec && ($args{space_typed} || !$args{subcommand})) {
         $log->trace("Complete subcommand argument names & values");
         return Sub::Spec::BashComplete::bash_complete_spec_arg(
             $spec,
@@ -400,13 +400,11 @@ sub _run_completion {
     } else {
         $log->trace("Complete general options & names of subcommands");
         my $subcommands = $args{parent_args}{subcommands};
-        $log->tracef("subcommands=%s", $subcommands);
         if (ref($subcommands) eq 'CODE') {
             $subcommands = $subcommands->(parent_args=>$args{parent_args});
             die "Error: subcommands code didn't return hashref (2)\n"
                 unless ref($subcommands) eq 'HASH';
         }
-        #print "D: comp_word=$args{word}\n";
         return Sub::Spec::BashComplete::_complete_array(
             $args{word},
             [@general_opts, keys(%$subcommands)]
@@ -558,12 +556,12 @@ sub run {
     # now that we have spec, detect (2) if we're being invoked for bash
     # completion and do completion, and exit.
     if ($ENV{COMP_LINE}) {
-        $log->tracef("TMP: comp_words=%s, comp_cword=%d", $comp_words, $comp_cword);
-        my $complete_arg;
-        my $complete_args;
         # user has typed 'CMD subc ^' instead of just 'CMD subc^', in the latter
         # case we still need to complete subcommands name.
         my $space_typed = !defined($comp_words->[$comp_cword]);
+
+        my $complete_arg;
+        my $complete_args;
         if ($subc) {
             shift @$comp_words;
             $comp_cword-- unless $comp_cword < 1;
@@ -665,7 +663,7 @@ Sub::Spec::CmdLine - Access Perl subs via command line
 
 =head1 VERSION
 
-version 0.16
+version 0.17
 
 =head1 SYNOPSIS
 
@@ -737,10 +735,9 @@ None of the functions are exported by default, but they are exportable.
 Parse command line argument @argv into hash %args, suitable for passing into
 subs.
 
-Uses Getopt::Long to parse the result. You can Getopt::Long::Configure
-beforehand to modify behaviour (e.g. if you want no_permute).
+Uses Getopt::Long to parse the result.
 
-Note: As with GetOptions, this function modifies its argument, @argv.
+As with GetOptions, this function modifies its argument, @argv.
 
 Why would one use this function instead of using Getopt::Long directly? Among
 other reasons, we want YAML parsing (ability to pass data structures via command
