@@ -1,5 +1,25 @@
 Revision history for Sub::Spec::CmdLine
 
+0.13     2011-02-17
+
+       [INCOMPATIBLE CHANGES]
+
+         run(): rename 'require' argument to 'load'.
+
+       [IMPROVEMENTS]
+
+         parse_argv(): Respect arg spec: 'cmdline_aliases' for specifying
+         option aliases.
+
+         run(): Allow 'subcommands' argument to be coderef.
+
+         run(): Pass more info (arguments) to coderef 'help' argument.
+
+         run(): Add option 'allow_unknown_args' for non-strict argv parsing.
+
+         gen_usage(): Add option: 'options_name'.
+
+
 0.12     2011-02-16
 
          Fixes for bash completion.

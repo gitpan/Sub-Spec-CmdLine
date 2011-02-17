@@ -2,7 +2,7 @@ NAME
     Sub::Spec::CmdLine - Access Perl subs via command line
 
 VERSION
-    version 0.12
+    version 0.13
 
 SYNOPSIS
     In your module:
@@ -130,6 +130,9 @@ FUNCTIONS
 
     *   module => STR
 
+        Currently this must be supplied if you want --version, even if you
+        use subcommands. --version gets $VERSION from the main module.
+
     *   sub => STR
 
     *   spec => HASH | CODEREF
@@ -143,8 +146,7 @@ FUNCTIONS
         supplied help message (or help code, which is expected to return
         help text).
 
-    *   subcommands => {NAME => {module=>..., sub=>..., summary=>..., ...},
-        ...}
+    *   subcommands => {NAME => {ARGUMENT=>...}, ...} | CODEREF
 
         module and sub should be specified if you only have one sub to run.
         If you have several subs to run, assign each of them to a
@@ -163,6 +165,12 @@ FUNCTIONS
         category (for arrangement when listing commands), run, complete_arg,
         complete_args.
 
+        Subcommand argument can be a code reference, in which case it will
+        be called with %args containing: name (subcommand name), args
+        (arguments to run()). The code is expected to return structure for
+        argument with specified name, or, when name is not specified, a
+        hashref containing all subcommand arguments.
+
     *   run => CODEREF
 
         Instead of running command by invoking subroutine specified by
@@ -174,9 +182,11 @@ FUNCTIONS
         If set to 0, instead of exiting with exit(), return the exit code
         instead.
 
-    *   require => BOOL (optional, default 1)
+    *   load => BOOL (optional, default 1)
 
-        If set to 0, do not try to require the module.
+        If set to 0, do not try to load (require()) the module.
+
+    *   allow_unknown_args => BOOL (optional, default 0)
 
     *   complete_arg => {ARGNAME => CODEREF, ...}
 
