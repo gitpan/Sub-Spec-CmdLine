@@ -17,7 +17,7 @@ my %module_build_args = (
     'Steven Haryanto <stevenharyanto@gmail.com>'
   ],
   'dist_name' => 'Sub-Spec-CmdLine',
-  'dist_version' => '0.18',
+  'dist_version' => '0.19',
   'license' => 'perl',
   'module_name' => 'Sub::Spec::CmdLine',
   'recommends' => {},
@@ -34,7 +34,9 @@ my %module_build_args = (
     'YAML::Syck' => '0',
     'perl' => '5.010000'
   },
-  'script_files' => []
+  'script_files' => [
+    'bin/runpm'
+  ]
 );
 
 

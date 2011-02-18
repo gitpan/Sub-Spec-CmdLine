@@ -5,7 +5,7 @@ MANIFEST
 MANIFEST.SKIP
 META.yml
 README
-bin.todo/mod2cmd
+bin/runpm
 dist.ini
 lib/Sub/Spec/CmdLine.pm
 t/00-compile.t

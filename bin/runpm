@@ -1,0 +1,119 @@
+#!/usr/bin/perl
+
+# workaround for dzil
+package runpm;
+BEGIN {
+  $runpm::VERSION = '0.19';
+}
+# ABSTRACT: Run Perl module as a command-line application
+
+use 5.010;
+use strict;
+use warnings;
+
+use Sub::Spec::CmdLine qw(run);
+
+@ARGV or die "Usage: $0 <Perl::Module::Name>\n";
+
+my $module = shift @ARGV;
+my $modulep = $module;
+$modulep =~ s!::!/!g;
+$modulep .= ".pm";
+
+eval { require $modulep };
+die $@ if $@;
+
+my %subs;
+{
+    no strict 'refs';
+    %subs = %{"$module\::SUBS"}
+        or die "Sorry, no spec found in Perl module $module\n";
+}
+
+run(
+    module      => $module,
+    load        => 0,
+    cmd         => $ENV{PERL_RUNPM_PROG} // $0,
+    subcommands => {
+        map { $_ => {} } keys %subs,
+    },
+);
+
+
+=pod
+
+=head1 NAME
+
+runpm - Run Perl module as a command-line application
+
+=head1 VERSION
+
+version 0.19
+
+=head1 SYNOPSIS
+
+From command-line:
+
+ % runpm Foo::Bar
+
+Or save this in C<foobar> somewhere in PATH:
+
+ #!/bin/bash
+ export PERL_RUNPM_PROG=`basename $0`
+ runpm Foo::Bar
+
+You can now do:
+
+ % foobar --help; # show help
+
+ % foobar --list; # list all subcommands, which are subroutines in Foo::Bar
+
+ % foobar sub1 --arg1 ... --arg2 ...; # execute sub1
+
+ % foobar --yaml sub1 ...; # execute sub1 and return output as YAML
+
+ % foobar --help sub1; # show help usage for sub1
+
+ % foobar --version
+
+ % complete -C foobar foobar
+ % foobar <TAB>; # tab completion will now work
+
+=head1 DESCRIPTION
+
+One of the lazy ways of writing a command-line application is by not writing it.
+You just write your module functions, following a few conventions outlined in
+L<Sub::Spec>. Later you can "export" your module as a command-line application
+with B<runpm>, complete with options parsing, --help (including for each
+subroutine), output formatting, even bash completion.
+
+B<runpm> calls L<Sub::Spec::CmdLine>'s run() under the hood.
+
+To make bash completion work, you need to install L<Sub::Spec::BashComplete>
+first.
+
+=head1 SEE ALSO
+
+L<Sub::Spec>
+
+L<Sub::Spec::CmdLine>
+
+A few applications using Sub::Spec::CmdLine: L<File::RsyBak> (the B<rsybak>
+command), L<Git::Bunch> (the B<gitbunch> command).
+
+=head1 AUTHOR
+
+Steven Haryanto <stevenharyanto@gmail.com>
+
+=head1 COPYRIGHT AND LICENSE
+
+This software is copyright (c) 2011 by Steven Haryanto.
+
+This is free software; you can redistribute it and/or modify it under
+the same terms as the Perl 5 programming language system itself.
+
+=cut
+
+
+__END__
+
