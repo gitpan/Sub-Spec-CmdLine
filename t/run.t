@@ -48,39 +48,45 @@ sub wantodd {
 
 package main;
 
-test_complete(
-    name        => 'arg name (single sub)',
-    argv        => [],
-    args        => {module=>'Foo', sub=>'ok'},
-    comp_line   => 'CMD -',
-    comp_point0 => '     ^',
-    result      => [qw(--help -h -? --arg1 --arg2 --arg3)],
-);
-test_complete(
-    name        => 'arg value from arg spec "in" (single sub)',
-    argv        => [],
-    args        => {module=>'Foo', sub=>'ok'},
-    comp_line   => 'CMD ',
-    comp_point0 => '    ^',
-    result      => [qw(a b c d)],
-);
-test_complete(
-    name        => 'arg value from "complete_args" (single sub)',
-    argv        => [],
-    args        => {module=>'Foo', sub=>'ok', complete_args=>sub {qw(e f g h)}},
-    comp_line   => 'CMD arg1 ',
-    comp_point0 => '         ^',
-    result      => [qw(e f g h)],
-);
-test_complete(
-    name        => 'arg value from "complete_arg" (single sub)',
-    argv        => [],
-    args        => {module=>'Foo', sub=>'ok',
-                    complete_arg=>{arg2=>sub{qw(e f g h)}}},
-    comp_line   => 'CMD arg1 ',
-    comp_point0 => '         ^',
-    result      => [qw(e f g h)],
-);
+subtest 'completion' => sub {
+    plan skip_all => 'Sub::Spec::BashComplete is not available'
+        unless eval { require Sub::Spec::BashComplete };
+
+    test_complete(
+        name        => 'arg name (single sub)',
+        argv        => [],
+        args        => {module=>'Foo', sub=>'ok'},
+        comp_line   => 'CMD -',
+        comp_point0 => '     ^',
+        result      => [qw(--help -h -\\? --arg1 --arg2 --arg3)],
+    );
+    test_complete(
+        name        => 'arg value from arg spec "in" (single sub)',
+        argv        => [],
+        args        => {module=>'Foo', sub=>'ok'},
+        comp_line   => 'CMD ',
+        comp_point0 => '    ^',
+        result      => [qw(a b c d)],
+    );
+    test_complete(
+        name        => 'arg value from "complete_args" (single sub)',
+        argv        => [],
+        args        => {module=>'Foo', sub=>'ok',
+                        complete_args=>sub {qw(e f g h)}},
+        comp_line   => 'CMD arg1 ',
+        comp_point0 => '         ^',
+        result      => [qw(e f g h)],
+    );
+    test_complete(
+        name        => 'arg value from "complete_arg" (single sub)',
+        argv        => [],
+        args        => {module=>'Foo', sub=>'ok',
+                        complete_arg=>{arg2=>sub{qw(e f g h)}}},
+        comp_line   => 'CMD arg1 ',
+        comp_point0 => '         ^',
+        result      => [qw(e f g h)],
+    );
+};
 
 test_run(name      => 'single sub',
          args      => {module=>'Foo', sub=>'ok'},
@@ -110,7 +116,6 @@ test_run(name      => 'subcommands',
          args      => {module=>'Foo', subcommands=>{ok=>{}, wantodd=>{}}},
          argv      => [qw/wantodd 3/],
          exit_code => 0,
-         test_complete => 1,
      );
 
 test_run(name      => 'unknown subcommand = error',

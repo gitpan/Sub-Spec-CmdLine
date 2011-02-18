@@ -1,5 +1,14 @@
 Revision history for Sub::Spec::CmdLine
 
+0.18     2011-02-18
+
+         run(): More fixes for completion.
+
+         spec: cmdline_aliases is renamed to arg_aliases.
+
+         Fix test [CT].
+
+
 0.17     2011-02-17
 
          run(): Fixed stupid parenthesis bug.
