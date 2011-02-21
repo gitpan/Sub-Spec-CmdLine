@@ -4,7 +4,7 @@ use 5.010;
 use strict;
 use warnings;
 use Log::Any '$log';
-use Test::More;
+use Test::More 0.96;
 
 use Capture::Tiny      qw(capture);
 use Clone::Any         qw(clone);
@@ -15,9 +15,9 @@ use Sub::Spec::CmdLine qw(run);
 
 package Foo;
 our $VERSION = "0.01";
-our %SUBS;
+our %SPEC;
 
-$SUBS{ok} = {
+$SPEC{ok} = {
     summary => 'Always return ok',
     args => {
         arg1 => ['str*' => {arg_pos=>0, in=>[qw/a b c d/]}],
@@ -31,7 +31,7 @@ sub ok {
      {"First argument"=>$args{arg1}, "Second argument"=>$args{arg2}}];
 }
 
-$SUBS{wantodd} = {
+$SPEC{wantodd} = {
     summary => 'Return error if given an even number',
     args => {
         num => ['int*' => {arg_pos=>0}],
@@ -51,6 +51,8 @@ package main;
 subtest 'completion' => sub {
     plan skip_all => 'Sub::Spec::BashComplete is not available'
         unless eval { require Sub::Spec::BashComplete };
+    plan skip_all => 'Sub::Spec::BashComplete version too old'
+        unless $Sub::Spec::BashComplete::VERSION >= '0.10';
 
     test_complete(
         name        => 'arg name (single sub)',
@@ -58,7 +60,7 @@ subtest 'completion' => sub {
         args        => {module=>'Foo', sub=>'ok'},
         comp_line   => 'CMD -',
         comp_point0 => '     ^',
-        result      => [qw(--help -h -\\? --arg1 --arg2 --arg3)],
+        result      => [qw(--help -h -\? --arg1 --arg2 --arg3)],
     );
     test_complete(
         name        => 'arg value from arg spec "in" (single sub)',

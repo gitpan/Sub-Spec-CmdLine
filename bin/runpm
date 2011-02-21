@@ -3,7 +3,7 @@
 # workaround for dzil
 package runpm;
 BEGIN {
-  $runpm::VERSION = '0.19';
+  $runpm::VERSION = '0.21';
 }
 # ABSTRACT: Run Perl module as a command-line application
 
@@ -26,7 +26,7 @@ die $@ if $@;
 my %subs;
 {
     no strict 'refs';
-    %subs = %{"$module\::SUBS"}
+    %subs = %{"$module\::SPEC"}
         or die "Sorry, no spec found in Perl module $module\n";
 }
 
@@ -48,7 +48,7 @@ runpm - Run Perl module as a command-line application
 
 =head1 VERSION
 
-version 0.19
+version 0.21
 
 =head1 SYNOPSIS
 
@@ -84,13 +84,17 @@ You can now do:
 One of the lazy ways of writing a command-line application is by not writing it.
 You just write your module functions, following a few conventions outlined in
 L<Sub::Spec>. Later you can "export" your module as a command-line application
-with B<runpm>, complete with options parsing, --help (including for each
-subroutine), output formatting, even bash completion.
-
-B<runpm> calls L<Sub::Spec::CmdLine>'s run() under the hood.
+with B<runpm> and get these features for free: options parsing, --help
+(including for each subroutine), output formatting, even bash completion.
 
 To make bash completion work, you need to install L<Sub::Spec::BashComplete>
 first.
+
+B<runpm> calls L<Sub::Spec::CmdLine>'s run() under the hood.
+
+Currently runpm offers little options, it's just a quick way to run your module.
+For more customization (e.g. only export some functions, rename subcommands, run
+two or more modules, etc), write a wrapper script for run() directly.
 
 =head1 SEE ALSO
 

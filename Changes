@@ -1,5 +1,19 @@
 Revision history for Sub::Spec::CmdLine
 
+0.21     2011-02-21
+
+         Add some more documentation.
+
+         Requires recent versions of Test::More & Sub::Spec::BashComplete.
+
+
+0.20     2011-02-18
+
+         Escape completion output since BashComplete now doesn't.
+
+         Added some doc.
+
+
 0.19     2011-02-18
 
          Provide runpm script.
