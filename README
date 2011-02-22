@@ -2,7 +2,7 @@ NAME
     Sub::Spec::CmdLine - Access Perl subs via command line
 
 VERSION
-    version 0.21
+    version 0.22
 
 SYNOPSIS
     In your module:
