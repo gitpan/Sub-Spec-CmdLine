@@ -1,5 +1,12 @@
 Revision history for Sub::Spec::CmdLine
 
+0.23     2011-02-23
+
+         Fix dependency (Sub::Spec version).
+
+         Don't add error message when Getopt::Long already prints to stderr.
+
+
 0.22     2011-02-22
 
          Use Sub::Spec::Utils.
