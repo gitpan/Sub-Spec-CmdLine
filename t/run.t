@@ -52,7 +52,7 @@ subtest 'completion' => sub {
     plan skip_all => 'Sub::Spec::BashComplete is not available'
         unless eval { require Sub::Spec::BashComplete };
     unless ($Sub::Spec::BashComplete::VERSION >= '0.10') {
-        my $msg = 'Sub::Spec::BashComplete version too old';
+        my $msg = 'Sub::Spec::BashComplete version too old (< 0.10)';
         if ($ENV{RELEASE_TESTING}) {
             die $msg;
         } else {

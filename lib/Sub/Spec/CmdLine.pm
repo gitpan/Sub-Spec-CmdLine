@@ -1,6 +1,6 @@
 package Sub::Spec::CmdLine;
 BEGIN {
-  $Sub::Spec::CmdLine::VERSION = '0.23';
+  $Sub::Spec::CmdLine::VERSION = '0.24';
 }
 # ABSTRACT: Access Perl subs via command line
 
@@ -684,9 +684,20 @@ sub run {
             sub_args => $args,
         );
     } else {
-        # call sub
-        my $subref = \&{$module."::$sub"};
-        $res       = $subref->(%$args);
+        # run sub
+        {
+            require Sub::Spec::Runner;
+            my $runner = Sub::Spec::Runner->new;
+            $runner->load_modules($load);
+            eval { $runner->add("$module\::$sub") };
+            if ($@) {
+                $res = [412, "Cannot add sub to runner: $@"];
+                last;
+            }
+            $runner->args($args);
+            $res = $runner->run;
+            $res = $runner->result("$module\::$sub") // $res;
+        }
     }
 
     # output
@@ -700,7 +711,7 @@ sub run {
 
 package BlankStr;
 BEGIN {
-  $BlankStr::VERSION = '0.23';
+  $BlankStr::VERSION = '0.24';
 }
 use overload q{""} => sub { " \b" };
 sub new { bless(\$_[0], $_[0]) }
@@ -716,7 +727,7 @@ Sub::Spec::CmdLine - Access Perl subs via command line
 
 =head1 VERSION
 
-version 0.23
+version 0.24
 
 =head1 SYNOPSIS
 
