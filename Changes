@@ -1,5 +1,11 @@
 Revision history for Sub::Spec::CmdLine
 
+0.25     2011-02-28
+
+         On non-success response from sub, print output (error message) even if
+         spec enables cmdline_suppress_output.
+
+
 0.24     2011-02-28
 
          Now based on Sub::Spec::Runner for dependency checking before run.
