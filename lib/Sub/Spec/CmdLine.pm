@@ -1,6 +1,6 @@
 package Sub::Spec::CmdLine;
 BEGIN {
-  $Sub::Spec::CmdLine::VERSION = '0.25';
+  $Sub::Spec::CmdLine::VERSION = '0.26';
 }
 # ABSTRACT: Access Perl subs via command line
 
@@ -495,7 +495,7 @@ _
 }
 
 sub run {
-    $log->trace("-> run()");
+    $log->trace("-> CmdLine's run()");
     require Getopt::Long;
 
     my %args = @_;
@@ -689,15 +689,15 @@ sub run {
             require Sub::Spec::Runner;
             my $runner = Sub::Spec::Runner->new;
             $runner->load_modules($load);
-            eval { $runner->add("$module\::$sub") };
+            eval { $runner->add("$module\::$sub", $args) };
             my $eval_err = $@;
             if ($eval_err) {
                 chomp($eval_err);
                 $res = [412, $eval_err];
                 last;
             }
-            $runner->args($args);
             $res = $runner->run;
+            $res->[2] = undef;
             $res = $runner->result("$module\::$sub") // $res;
         }
     }
@@ -710,12 +710,13 @@ sub run {
     print format_result($res, $opts{format})
         unless $spec->{cmdline_suppress_output} && !$exit_code;
 
+    $log->trace("<- CmdLine's run()");
     if ($exit) { exit $exit_code } else { return $exit_code }
 }
 
 package BlankStr;
 BEGIN {
-  $BlankStr::VERSION = '0.25';
+  $BlankStr::VERSION = '0.26';
 }
 use overload q{""} => sub { " \b" };
 sub new { bless(\$_[0], $_[0]) }
@@ -731,7 +732,7 @@ Sub::Spec::CmdLine - Access Perl subs via command line
 
 =head1 VERSION
 
-version 0.25
+version 0.26
 
 =head1 SYNOPSIS
 

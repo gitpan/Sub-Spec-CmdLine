@@ -23,11 +23,11 @@ requires:
   Log::Any: 0
   PHP::Serialization: 0
   Sub::Spec: 0.04
-  Sub::Spec::Runner: 0.08
+  Sub::Spec::Runner: 0.09
   Test::More: 0.96
   YAML::Syck: 0
   perl: 5.010000
 resources:
   homepage: http://search.cpan.org/dist/Sub-Spec-CmdLine/
   repository: http://github.com/sharyanto/perl-Sub-Spec-CmdLine
-version: 0.25
+version: 0.26

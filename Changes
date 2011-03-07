@@ -1,5 +1,10 @@
 Revision history for Sub::Spec::CmdLine
 
+0.26     2011-03-04
+
+         Require Sub::Spec::Runner 0.09.
+
+
 0.25     2011-02-28
 
          On non-success response from sub, print output (error message) even if
