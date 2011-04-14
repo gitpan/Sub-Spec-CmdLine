@@ -3,7 +3,7 @@
 # workaround for dzil
 package runpm;
 BEGIN {
-  $runpm::VERSION = '0.26';
+  $runpm::VERSION = '0.27';
 }
 # ABSTRACT: Run Perl module as a command-line application
 
@@ -33,7 +33,7 @@ my %subs;
 run(
     module      => $module,
     load        => 0,
-    cmd         => $ENV{PERL_RUNPM_PROG} // $0,
+    cmd         => $ENV{PERL_RUNPM_PROG} // "$0 $module",
     subcommands => {
         map { $_ => {} } keys %subs,
     },
@@ -48,7 +48,7 @@ runpm - Run Perl module as a command-line application
 
 =head1 VERSION
 
-version 0.26
+version 0.27
 
 =head1 SYNOPSIS
 

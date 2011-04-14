@@ -4,9 +4,9 @@ use 5.010;
 use strict;
 use warnings;
 use Log::Any '$log';
-use Test::More tests => 13;
+use Test::More tests => 17;
 
-use Clone::Any qw(clone);
+use Data::Clone        qw(clone);
 use Sub::Spec::CmdLine qw(parse_argv);
 
 my $spec = {
@@ -55,14 +55,38 @@ test_parse(spec=>$spec, argv=>[qw/--arg1 1 --arg2 2/],
            args=>{arg1=>1, arg2=>2},
            name=>"optional missing = ok");
 
+{
+    my $extra;
+    test_parse(spec=>$spec, argv=>[qw/--arg1 1 --arg2 2 --extra/],
+               opts=>{extra_getopts=>{extra=>sub{$extra=5}}},
+               args=>{arg1=>1, arg2=>2},
+               post_test=>sub {
+                   is($extra, 5, "extra getopt is executed");
+               },
+               name=>"opt: extra_getopts",
+           );
+}
+
+test_parse(spec=>{args=>{arg1=>'str*'}}, argv=>[qw/--arg1 1 --arg2 2/],
+           opts=>{strict=>1}, # the default
+           error=>1,
+           name=>"opt: strict=1",
+       );
+test_parse(spec=>{args=>{arg1=>'str*'}}, argv=>[qw/--arg1 1 --arg2 2/],
+           opts=>{strict=>0},
+           args=>{arg1=>1},
+           name=>"opt: strict=0",
+       );
+
 sub test_parse {
     my (%args) = @_;
 
     my $name = $args{name};
     my $argv = clone($args{argv});
     my $res;
+    my $opts = $args{opts} // {};
     eval {
-        $res = parse_argv($argv, $args{spec});
+        $res = parse_argv($argv, $args{spec}, $opts);
     };
     my $eval_err = $@;
     if ($args{error}) {
@@ -70,6 +94,10 @@ sub test_parse {
     } else {
         is_deeply($res, $args{args}, $name)
             or diag explain $res;
+    }
+
+    if ($args{post_test}) {
+        $args{post_test}->();
     }
 }
 

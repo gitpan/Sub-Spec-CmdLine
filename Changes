@@ -1,5 +1,20 @@
 Revision history for Sub::Spec::CmdLine
 
+0.27     2011-04-14
+
+         [ENHANCEMENTS]
+
+         - run(): For convenience, allow general options (e.g. --version,
+           --help, --json, etc) to be specified after subcommand name, if it
+           doesn't collide with spec arg
+
+         [ETC]
+
+         - Replace Clone::Any with Data::Clone (Clone::Any fallbacks to Storable
+           which doesnt support storing Regexp, so tests will fail if Clone is
+           not available).
+
+
 0.26     2011-03-04
 
          Require Sub::Spec::Runner 0.09.

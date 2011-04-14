@@ -17,14 +17,14 @@ my %module_build_args = (
     'Steven Haryanto <stevenharyanto@gmail.com>'
   ],
   'dist_name' => 'Sub-Spec-CmdLine',
-  'dist_version' => '0.26',
+  'dist_version' => '0.27',
   'license' => 'perl',
   'module_name' => 'Sub::Spec::CmdLine',
   'recommends' => {},
   'recursive_test_files' => 1,
   'requires' => {
     'Capture::Tiny' => '0',
-    'Clone::Any' => '0',
+    'Data::Clone' => '0',
     'Data::Dump::Partial' => '0',
     'Data::Format::Pretty::Console' => '0',
     'JSON' => '0',

@@ -1,6 +1,6 @@
 package Sub::Spec::CmdLine;
 BEGIN {
-  $Sub::Spec::CmdLine::VERSION = '0.26';
+  $Sub::Spec::CmdLine::VERSION = '0.27';
 }
 # ABSTRACT: Access Perl subs via command line
 
@@ -19,6 +19,7 @@ sub _parse_schema {
     Sub::Spec::Utils::_parse_schema(@_);
 }
 
+my $_pa_skip_check_required_args;
 sub parse_argv {
     require Getopt::Long;
     require YAML::Syck; $YAML::Syck::ImplicitTyping = 1;
@@ -69,6 +70,16 @@ sub parse_argv {
             }
         }
     }
+
+    my $extra_go = $opts->{extra_getopts} // {};
+    while (my ($k, $v) = each %$extra_go) {
+        my $k_ = $k; $k_ =~ s/-/_/g;
+        next if $go_spec{$k} || $go_spec{"--$k"} || $args_spec->{$k_};
+        $go_spec{$k} = $v;
+    }
+
+    $_pa_skip_check_required_args = 0;
+
     $log->tracef("GetOptions rule: %s", \%go_spec);
     Getopt::Long::Configure(
         $opts->{strict} ? "no_pass_through" : "pass_through",
@@ -138,9 +149,12 @@ sub parse_argv {
     }
 
     # check required args
-    while (my ($name, $schema) = each %$args_spec) {
-        if ($schema->{attr_hashes}[0]{required} && !defined($args->{$name})) {
-            die "Missing required argument: $name\n" if $opts->{strict};
+    unless ($_pa_skip_check_required_args) {
+        while (my ($name, $schema) = each %$args_spec) {
+            if ($schema->{attr_hashes}[0]{required} &&
+                    !defined($args->{$name})) {
+                die "Missing required argument: $name\n" if $opts->{strict};
+            }
         }
     }
 
@@ -479,7 +493,7 @@ sub _run_help {
             $out .= <<_;
 Usage:
   To get general help:
-    $cmd --help (or -h, or -?)
+    $cmd --help (or -h)
   To list subcommands:
     $cmd --list (or -l)
   To show version:
@@ -522,16 +536,26 @@ sub run {
     my %opts = (format => undef, action => 'run');
     Getopt::Long::Configure("pass_through", "no_ignore_case", "no_permute");
     my %getopts = (
-        "--list|l"     => sub { $opts{action} = 'list'     },
-        "--version|v"  => sub { $opts{action} = 'version'  },
-        "--help|h|?"   => sub { $opts{action} = 'help'     },
+        "list"       => sub { $_pa_skip_check_required_args++;
+                              $opts{action} = 'list'     },
+        "version"    => sub { $_pa_skip_check_required_args++;
+                              $opts{action} = 'version'  },
+        "help"       => sub { $_pa_skip_check_required_args++;
+                              $opts{action} = 'help'     },
 
-        "--text"       => sub { $opts{format} = 'text'     },
-        "--yaml"       => sub { $opts{format} = 'yaml'     },
-        "--json"       => sub { $opts{format} = 'json'     },
-        "--pretty"     => sub { $opts{format} = 'pretty'   },
-        "--nopretty"   => sub { $opts{format} = 'nopretty' },
+        "text"       => sub { $opts{format} = 'text'     },
+        "yaml"       => sub { $opts{format} = 'yaml'     },
+        "json"       => sub { $opts{format} = 'json'     },
+        "pretty"     => sub { $opts{format} = 'pretty'   },
+        "nopretty"   => sub { $opts{format} = 'nopretty' },
     );
+    # aliases. we don't use "version|v" etc so the key can be compared with spec
+    # arg in parse_argv()
+    $getopts{l} = $getopts{list};
+    $getopts{v} = $getopts{version};
+    $getopts{h} = $getopts{help};
+    $getopts{'please_help_me|?'} = $getopts{help}; # Go::L doesn't accept '?'
+
     Getopt::Long::GetOptions(%getopts);
 
     my $cmd = $args{cmd};
@@ -632,6 +656,22 @@ sub run {
         if ($exit) { exit 0 } else { return 0 }
     }
 
+    # parse argv
+    my $args;
+    if ($spec && $opts{action} eq 'run') {
+        my $popts = {};
+        $popts->{strict} = 0
+            if $subc->{allow_unknown_args} // $args{allow_unknown_args};
+
+        # this allows us to catch --help, --version, etc specified after
+        # subcommand name (if it doesn't collide with any spec arg). for
+        # convenience, e.g.: allowing 'cmd subcmd --help' in addition to 'cmd
+        # --help subcmd'.
+        $popts->{extra_getopts} = \%getopts;
+
+        $args = parse_argv(\@ARGV, $spec, $popts);
+    }
+
     # handle --list
     if ($opts{action} eq 'list') {
         _run_list($subcommands, \%args);
@@ -665,12 +705,6 @@ sub run {
     die "Please specify a subcommand, ".
         "use $cmd -l to list available subcommands\n"
             unless $spec;
-
-    # parse argv
-    my $popts = {};
-    $popts->{strict} = 0
-        if $subc->{allow_unknown_args} // $args{allow_unknown_args};
-    my $args = parse_argv(\@ARGV, $spec, $popts);
 
     # finally, run!
     my $res;
@@ -716,7 +750,7 @@ sub run {
 
 package BlankStr;
 BEGIN {
-  $BlankStr::VERSION = '0.26';
+  $BlankStr::VERSION = '0.27';
 }
 use overload q{""} => sub { " \b" };
 sub new { bless(\$_[0], $_[0]) }
@@ -732,7 +766,7 @@ Sub::Spec::CmdLine - Access Perl subs via command line
 
 =head1 VERSION
 
-version 0.26
+version 0.27
 
 =head1 SYNOPSIS
 
