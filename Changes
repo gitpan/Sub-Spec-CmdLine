@@ -1,5 +1,12 @@
 Revision history for Sub::Spec::CmdLine
 
+0.28     2011-04-14
+
+         [BUG FIXES]
+
+         - Remove extra name line in usage message.
+
+
 0.27     2011-04-14
 
          [ENHANCEMENTS]

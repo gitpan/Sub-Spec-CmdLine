@@ -2,7 +2,7 @@ NAME
     Sub::Spec::CmdLine - Access Perl subs via command line
 
 VERSION
-    version 0.27
+    version 0.28
 
 SYNOPSIS
     In your module:
@@ -83,6 +83,13 @@ FUNCTIONS
     *   strict => BOOL (default 1)
 
         If set to 0, will still return parsed argv even if there are errors.
+
+    *   extra_getopts => HASHREF
+
+        If specified, add extra Getopt::Long specification (as long as it
+        doesn't clash with spec arg). This is used, for example, by run() to
+        add general options --help, --version, --list, etc so it can mixed
+        with spec arg options, for convenience.
 
    How parse_argv() translates the args spec clause
     Bool types can be specified using

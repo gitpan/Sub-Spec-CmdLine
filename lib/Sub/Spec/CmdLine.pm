@@ -1,6 +1,6 @@
 package Sub::Spec::CmdLine;
 BEGIN {
-  $Sub::Spec::CmdLine::VERSION = '0.27';
+  $Sub::Spec::CmdLine::VERSION = '0.28';
 }
 # ABSTRACT: Access Perl subs via command line
 
@@ -476,7 +476,7 @@ sub _run_help {
 
     my $out = "";
 
-    $out .= $cmd . ($summary ? " - $summary" : "") . "\n\n";
+    #$out .= $cmd . ($summary ? " - $summary" : "") . "\n\n";
 
     if ($help) {
         if (ref($help) eq 'CODE') {
@@ -750,7 +750,7 @@ sub run {
 
 package BlankStr;
 BEGIN {
-  $BlankStr::VERSION = '0.27';
+  $BlankStr::VERSION = '0.28';
 }
 use overload q{""} => sub { " \b" };
 sub new { bless(\$_[0], $_[0]) }
@@ -766,7 +766,7 @@ Sub::Spec::CmdLine - Access Perl subs via command line
 
 =head1 VERSION
 
-version 0.27
+version 0.28
 
 =head1 SYNOPSIS
 
@@ -853,6 +853,13 @@ Options in %opts:
 =item * strict => BOOL (default 1)
 
 If set to 0, will still return parsed argv even if there are errors.
+
+=item * extra_getopts => HASHREF
+
+If specified, add extra Getopt::Long specification (as long as it doesn't clash
+with spec arg). This is used, for example, by run() to add general options
+--help, --version, --list, etc so it can mixed with spec arg options, for
+convenience.
 
 =back
 
