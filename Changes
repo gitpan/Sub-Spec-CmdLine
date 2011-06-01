@@ -1,5 +1,14 @@
 Revision history for Sub::Spec::CmdLine
 
+0.29     2011-06-01
+
+         No functional changes.
+
+         [ETC]
+
+         - Update to latest version of Sub::Spec::Runner.
+
+
 0.28     2011-04-14
 
          [BUG FIXES]
@@ -18,7 +27,7 @@ Revision history for Sub::Spec::CmdLine
          [ETC]
 
          - Replace Clone::Any with Data::Clone (Clone::Any fallbacks to Storable
-           which doesnt support storing Regexp, so tests will fail if Clone is
+           which doesn't support storing Regexp, so tests will fail if Clone is
            not available).
 
 

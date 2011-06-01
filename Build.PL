@@ -17,7 +17,7 @@ my %module_build_args = (
     'Steven Haryanto <stevenharyanto@gmail.com>'
   ],
   'dist_name' => 'Sub-Spec-CmdLine',
-  'dist_version' => '0.28',
+  'dist_version' => '0.29',
   'license' => 'perl',
   'module_name' => 'Sub::Spec::CmdLine',
   'recommends' => {},
@@ -32,7 +32,7 @@ my %module_build_args = (
     'Log::Any' => '0',
     'PHP::Serialization' => '0',
     'Sub::Spec' => '0.04',
-    'Sub::Spec::Runner' => '0.09',
+    'Sub::Spec::Runner' => '0.18',
     'Test::More' => '0.96',
     'YAML::Syck' => '0',
     'perl' => '5.010000'
