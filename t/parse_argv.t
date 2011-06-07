@@ -4,7 +4,7 @@ use 5.010;
 use strict;
 use warnings;
 use Log::Any '$log';
-use Test::More tests => 17;
+use Test::More 0.96;
 
 use Data::Clone        qw(clone);
 use Sub::Spec::CmdLine qw(parse_argv);
@@ -14,6 +14,8 @@ my $spec = {
         arg1 => ['str*' => {arg_pos=>0}],
         arg2 => ['str*' => {arg_pos=>1}],
         arg3 => 'str',
+        arg4 => 'array',
+        arg5 => 'hash',
     },
 };
 
@@ -45,15 +47,20 @@ test_parse(spec=>$spec, argv=>[qw/arg1/], error=>1,
            name=>"required missing = fails");
 test_parse(spec=>$spec, argv=>[qw/--foo bar/], error=>1,
            name=>"unknown args given = fails");
-test_parse(spec=>$spec, argv=>['--arg1', 1, '--arg2', '{foo: false}'],
-           args=>{arg1=>1, arg2=>{foo=>""}},
-           name=>"yaml parsing");
-test_parse(spec=>$spec, argv=>['--arg1', 1, '--arg2', '{foo: false'],
-           args=>{arg1=>1, arg2=>'{foo: false'},
-           name=>"invalid yaml becomes literal");
 test_parse(spec=>$spec, argv=>[qw/--arg1 1 --arg2 2/],
            args=>{arg1=>1, arg2=>2},
            name=>"optional missing = ok");
+
+test_parse(spec=>$spec, argv=>['--arg1', '{foo: false}',
+                               '--arg2', '',
+                               '--arg5', '{foo: false}'],
+           args=>{arg1=>'{foo: false}', arg2=>'', arg5=>{foo=>""}},
+           name=>"yaml parsing, done on nonscalars");
+test_parse(spec=>$spec, argv=>['--arg1', '{foo: false}',
+                               '--arg2', '',
+                               '--arg5', '{foo: false'],
+           error=>1,
+           name=>"yaml syntax error");
 
 {
     my $extra;
@@ -78,26 +85,33 @@ test_parse(spec=>{args=>{arg1=>'str*'}}, argv=>[qw/--arg1 1 --arg2 2/],
            name=>"opt: strict=0",
        );
 
+# XXX test --foo-bar as --foo_bar alias
+
+DONE_TESTING:
+done_testing();
+
 sub test_parse {
     my (%args) = @_;
 
-    my $name = $args{name};
-    my $argv = clone($args{argv});
-    my $res;
-    my $opts = $args{opts} // {};
-    eval {
-        $res = parse_argv($argv, $args{spec}, $opts);
-    };
-    my $eval_err = $@;
-    if ($args{error}) {
-        ok($eval_err, "$name (dies)");
-    } else {
-        is_deeply($res, $args{args}, $name)
-            or diag explain $res;
-    }
+    subtest $args{name} => sub {
+        my $argv = clone($args{argv});
+        my $res;
+        my $opts = $args{opts} // {};
+        eval {
+            $res = parse_argv($argv, $args{spec}, $opts);
+        };
+        my $eval_err = $@;
+        diag "eval_err = $eval_err" if $eval_err;
+        if ($args{error}) {
+            ok($eval_err, "dies");
+        } else {
+            is_deeply($res, $args{args}, "result")
+                or diag explain $res;
+        }
 
-    if ($args{post_test}) {
-        $args{post_test}->();
+        if ($args{post_test}) {
+            $args{post_test}->();
+        }
     }
 }
 

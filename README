@@ -2,7 +2,7 @@ NAME
     Sub::Spec::CmdLine - Access Perl subs via command line
 
 VERSION
-    version 0.29
+    version 0.30
 
 SYNOPSIS
     In your module:
@@ -76,7 +76,8 @@ FUNCTIONS
 
     Why would one use this function instead of using Getopt::Long directly?
     Among other reasons, we want YAML parsing (ability to pass data
-    structures via command line) and parsing of arg_pos and arg_greedy.
+    structures via command line) and parsing of arg_pos and arg_greedy. And
+    of course, if you already write subroutine spec, might as well use it.
 
     Options in %opts:
 
@@ -108,17 +109,7 @@ FUNCTIONS
 
      --argname=VALUE
 
-    where *VALUE* is assumed to be in YAML markup, except when YAML loading
-    failed then it will be assumed to be a string literal. Example:
-
-     --argname '[1, 2, 3]'
-
-    then $args{argname} will contain a hashref [1, 2, 3]. But with:
-
-     --argname '[1, 2, 3'
-
-    then $args{argname} will contain a string '[1, 2, 3' since YAML parsing
-    failed.
+    VALUE will be parsed as YAML for nonscalar types.
 
     parse_argv() also takes arg_pos and arg_greedy type clause in schema
     into account, for example:
@@ -266,6 +257,20 @@ FUNCTIONS
 
     You can add that line in bash startup file (~/.bashrc, /etc/bash.bashrc,
     etc).
+
+FAQ
+  Why is nonscalar arguments parsed as YAML instead of other markup (JSON, etc)?
+    I think YAML is nicer in command-line because quotes are optional in a
+    few places:
+
+     $ cmd --array '[a, b, c]' --hash '{foo: bar}'
+
+    versus:
+
+     $ cmd --array '["a", "b", "c"]' --hash '{"foo": "bar"}'
+
+    Though YAML requires spaces in some places where JSON does not. A flag
+    to parse as JSON can be added upon request.
 
 SEE ALSO
     Sub::Spec

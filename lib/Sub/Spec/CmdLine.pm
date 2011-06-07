@@ -1,6 +1,6 @@
 package Sub::Spec::CmdLine;
 BEGIN {
-  $Sub::Spec::CmdLine::VERSION = '0.29';
+  $Sub::Spec::CmdLine::VERSION = '0.30';
 }
 # ABSTRACT: Access Perl subs via command line
 
@@ -89,19 +89,6 @@ sub parse_argv {
         die BlankStr->new if $opts->{strict};
     }
 
-    #$log->tracef("tmp args result (after getoptions): %s, argv: %s",
-    #             $args, $argv);
-
-    # parse YAML in opt values
-    for my $k (keys %$args) {
-        next unless defined($args->{$k});
-        eval { $args->{$k} = YAML::Syck::Load($args->{$k}) };
-        if ($@) {
-            $log->info("Option --$k doesn't contain valid YAML, ".
-                           "assuming it's literal string");
-        }
-    }
-
     # process arg_pos
   ARGV:
     for my $i (reverse 0..@$argv-1) {
@@ -116,26 +103,9 @@ sub parse_argv {
                 if ($ah0->{arg_greedy}) {
                     $args->{$name} = [splice(@$argv, $i)];
                     my $j = $i;
-                    # convert to yaml
-                    for (@{$args->{$name}}) {
-                        eval { $_ = YAML::Syck::Load($_) };
-                        if ($@) {
-                            $log->info(
-                                "Argument #".($j+1)." doesn't contain ".
-                                    "valid YAML, assuming it's literal string");
-                            $j++;
-                        }
-                    }
                     last ARGV;
                 } else {
                     $args->{$name} = splice(@$argv, $i, 1);
-                    # convert to yaml
-                    eval { $_ = YAML::Syck::Load($_) };
-                    if ($@) {
-                        $log->info(
-                            "Argument #".($i+1)." doesn't contain ".
-                                "valid YAML, assuming it's literal string");
-                    }
                 }
             }
         }
@@ -148,13 +118,35 @@ sub parse_argv {
             if $opts->{strict};
     }
 
-    # check required args
+    # check required args & parse yaml/etc
     unless ($_pa_skip_check_required_args) {
         while (my ($name, $schema) = each %$args_spec) {
             if ($schema->{attr_hashes}[0]{required} &&
                     !defined($args->{$name})) {
                 die "Missing required argument: $name\n" if $opts->{strict};
             }
+            my $parse_yaml;
+            my $type = $schema->{type};
+            # XXX more proper checking, e.g. check any/all recursively for
+            # nonscalar types. check base type.
+            $log->tracef("name=%s, arg=%s, parse_yaml=%s",
+                         $name, $args->{$name}, $parse_yaml);
+            $parse_yaml++ unless $type =~ /^(str|num|int|float|bool)$/;
+            if ($parse_yaml && defined($args->{$name})) {
+                if (ref($args->{$name}) eq 'ARRAY') {
+                    # XXX check whether each element needs to be YAML or not
+                    $args->{$name} = [
+                        map { YAML::Syck::Load($_) } @{$args->{$name}}
+                    ];
+                } elsif (!ref($args->{$name})) {
+                    $args->{$name} = YAML::Syck::Load($args->{$name});
+                } else {
+                    die "BUG: Why is \$args->{$name} ".
+                        ref($args->{$name})."?";
+                }
+            }
+
+            # XXX special parsing of type = date, accept
         }
     }
 
@@ -748,7 +740,7 @@ sub run {
 
 package BlankStr;
 BEGIN {
-  $BlankStr::VERSION = '0.29';
+  $BlankStr::VERSION = '0.30';
 }
 use overload q{""} => sub { " \b" };
 sub new { bless(\$_[0], $_[0]) }
@@ -764,7 +756,7 @@ Sub::Spec::CmdLine - Access Perl subs via command line
 
 =head1 VERSION
 
-version 0.29
+version 0.30
 
 =head1 SYNOPSIS
 
@@ -842,7 +834,8 @@ As with GetOptions, this function modifies its argument, @argv.
 
 Why would one use this function instead of using Getopt::Long directly? Among
 other reasons, we want YAML parsing (ability to pass data structures via command
-line) and parsing of arg_pos and arg_greedy.
+line) and parsing of arg_pos and arg_greedy. And of course, if you already write
+subroutine spec, might as well use it.
 
 Options in %opts:
 
@@ -879,16 +872,7 @@ or
 
  --argname=VALUE
 
-where I<VALUE> is assumed to be in YAML markup, except when YAML loading failed
-then it will be assumed to be a string literal. Example:
-
- --argname '[1, 2, 3]'
-
-then $args{argname} will contain a hashref [1, 2, 3]. But with:
-
- --argname '[1, 2, 3'
-
-then $args{argname} will contain a string '[1, 2, 3' since YAML parsing failed.
+VALUE will be parsed as YAML for nonscalar types.
 
 parse_argv() also takes B<arg_pos> and B<arg_greedy> type clause in schema into
 account, for example:
@@ -1042,6 +1026,22 @@ available). To get bash completion for your B<perlprog>, just type this in bash:
  % complete -C /path/to/perlprog perlprog
 
 You can add that line in bash startup file (~/.bashrc, /etc/bash.bashrc, etc).
+
+=head1 FAQ
+
+=head2 Why is nonscalar arguments parsed as YAML instead of other markup (JSON, etc)?
+
+I think YAML is nicer in command-line because quotes are optional in a few
+places:
+
+ $ cmd --array '[a, b, c]' --hash '{foo: bar}'
+
+versus:
+
+ $ cmd --array '["a", "b", "c"]' --hash '{"foo": "bar"}'
+
+Though YAML requires spaces in some places where JSON does not. A flag to parse
+as JSON can be added upon request.
 
 =head1 SEE ALSO
 

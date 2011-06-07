@@ -1,5 +1,13 @@
 Revision history for Sub::Spec::CmdLine
 
+0.30     2011-06-05
+
+         [INCOMPATIBLE CHANGES]
+
+         * To reduce the trap of implicit YAML parsing, parsing is only done for
+           nonscalar arguments.
+
+
 0.29     2011-06-01
 
          No functional changes.
