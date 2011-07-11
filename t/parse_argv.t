@@ -85,7 +85,24 @@ test_parse(spec=>{args=>{arg1=>'str*'}}, argv=>[qw/--arg1 1 --arg2 2/],
            name=>"opt: strict=0",
        );
 
-# XXX test --foo-bar as --foo_bar alias
+$spec = {
+    args => {
+        foo_bar_baz => 'int',
+    },
+};
+test_parse(name=>"dash alias for underscore (1)",
+           spec=>$spec, argv=>[qw/--foo_bar_baz 2/],
+           opts=>{}, args=>{foo_bar_baz=>2},
+       );
+test_parse(name=>"dash alias for underscore (2)",
+           spec=>$spec, argv=>[qw/--foo-bar-baz 2/],
+           opts=>{}, args=>{foo_bar_baz=>2},
+       );
+test_parse(name=>"dash alias for underscore (3)",
+           spec=>$spec, argv=>[qw/--foo-bar_baz 2/],
+           opts=>{},
+           error=>1,
+       );
 
 DONE_TESTING:
 done_testing();
@@ -101,7 +118,7 @@ sub test_parse {
             $res = parse_argv($argv, $args{spec}, $opts);
         };
         my $eval_err = $@;
-        diag "eval_err = $eval_err" if $eval_err;
+        diag "eval_err = $eval_err" if "$eval_err";
         if ($args{error}) {
             ok($eval_err, "dies");
         } else {

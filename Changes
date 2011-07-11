@@ -1,5 +1,15 @@
 Revision history for Sub::Spec::CmdLine
 
+0.31     2011-07-10
+
+         [ENHANCEMENTS]
+
+         * bin/runpm: add --help (-h) and -I (--library) options.
+
+         * run(): add dash_to_underscore option to allow subcommands using
+           dashes instead of underscores.
+
+
 0.30     2011-06-05
 
          [INCOMPATIBLE CHANGES]

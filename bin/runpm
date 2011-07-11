@@ -3,17 +3,40 @@
 # workaround for dzil
 package runpm;
 BEGIN {
-  $runpm::VERSION = '0.30';
+  $runpm::VERSION = '0.31';
 }
-# ABSTRACT: Run Perl module as a command-line application
 
 use 5.010;
 use strict;
 use warnings;
 
+use Getopt::Long;
 use Sub::Spec::CmdLine qw(run);
 
-@ARGV or die "Usage: $0 <Perl::Module::Name>\n";
+my %opts = (
+    library => [],
+);
+Getopt::Long::Configure('pass_through', 'no_permute');
+GetOptions(
+    'library|I=s' => $opts{library},
+    'help' => \$opts{help},
+);
+
+if ($opts{help} || !@ARGV) {
+    print <<USAGE;
+Usage:
+  $0 -h|--help
+  $0 [options] <Perl::Module::Name> -l
+  $0 [options] <Perl::Module::Name> <subname> [--help | [subargs]]
+
+Options:
+  -I LIB  Add LIB to Perl search dir (a la Perl's -I)
+
+USAGE
+    exit 0;
+}
+
+for my $dir (@{ $opts{library} }) { require lib; lib::import($dir) }
 
 my $module = shift @ARGV;
 my $modulep = $module;
@@ -37,6 +60,7 @@ run(
     subcommands => {
         map { $_ => {} } keys %subs,
     },
+    dash_to_underscore => 1,
 );
 
 
@@ -48,7 +72,7 @@ runpm - Run Perl module as a command-line application
 
 =head1 VERSION
 
-version 0.30
+version 0.31
 
 =head1 SYNOPSIS
 
@@ -120,4 +144,5 @@ the same terms as the Perl 5 programming language system itself.
 
 
 __END__
+# ABSTRACT: Run Perl module as a command-line application
 

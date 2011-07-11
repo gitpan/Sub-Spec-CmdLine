@@ -31,13 +31,13 @@ sub ok {
      {"First argument"=>$args{arg1}, "Second argument"=>$args{arg2}}];
 }
 
-$SPEC{wantodd} = {
+$SPEC{want_odd} = {
     summary => 'Return error if given an even number',
     args => {
         num => ['int*' => {arg_pos=>0}],
     },
 };
-sub wantodd {
+sub want_odd {
     my %args = @_;
     if ($args{num} % 2) {
         [200, "OK"];
@@ -114,22 +114,34 @@ test_run(name      => 'unknown arg = error',
          dies      => 1,
      );
 test_run(name      => 'exit code from sub res',
-         args      => {module=>'Foo', sub=>'wantodd'},
+         args      => {module=>'Foo', sub=>'want_odd'},
          argv      => [qw/4/],
          exit_code => 100,
          output_re => qr/hate/,
      );
 
 test_run(name      => 'subcommands',
-         args      => {module=>'Foo', subcommands=>{ok=>{}, wantodd=>{}}},
-         argv      => [qw/wantodd 3/],
+         args      => {module=>'Foo', subcommands=>{ok=>{}, want_odd=>{}}},
+         argv      => [qw/want_odd 3/],
          exit_code => 0,
      );
 
 test_run(name      => 'unknown subcommand = error',
-         args      => {module=>'Foo', subcommands=>{ok=>{}, wantodd=>{}}},
+         args      => {module=>'Foo', subcommands=>{ok=>{}, want_odd=>{}}},
          argv      => [qw/foo/],
          dies      => 1,
+     );
+
+test_run(name      => 'arg: dash_to_underscore=0',
+         args      => {module=>'Foo', subcommands=>{ok=>{}, want_odd=>{}}},
+         argv      => [qw/want-odd 3/],
+         dies      => 1,
+     );
+test_run(name      => 'arg: dash_to_underscore=1',
+         args      => {dash_to_underscore=>1,
+                       module=>'Foo', subcommands=>{ok=>{}, want_odd=>{}}},
+         argv      => [qw/want-odd 3/],
+         exit_code => 0,
      );
 
 for (qw(--help -h -?)) {
@@ -142,14 +154,14 @@ for (qw(--help -h -?)) {
 }
 
 test_run(name      => "general option (--version) before subcommand name",
-         args      => {module=>'Foo', subcommands=>{ok=>{}, wantodd=>{}}},
-         argv      => [qw/--version wantodd --num 4/],
+         args      => {module=>'Foo', subcommands=>{ok=>{}, want_odd=>{}}},
+         argv      => [qw/--version want_odd --num 4/],
          exit_code => 0,
          output_re => qr/version 0\.01/m,
      );
 test_run(name      => "general option (--help) after subcommand name",
-         args      => {module=>'Foo', subcommands=>{ok=>{}, wantodd=>{}}},
-         argv      => [qw/wantodd --num 4 --help/],
+         args      => {module=>'Foo', subcommands=>{ok=>{}, want_odd=>{}}},
+         argv      => [qw/want_odd --num 4 --help/],
          exit_code => 0,
          output_re => qr/^Options/m,
      );
@@ -165,7 +177,7 @@ for (qw(--version -v)) {
 
 for (qw(--list -l)) {
     test_run(name      => "list ($_)",
-             args      => {module=>'Foo', subcommands=>{ok=>{}, wantodd=>{}}},
+             args      => {module=>'Foo', subcommands=>{ok=>{}, want_odd=>{}}},
              argv      => [$_],
              exit_code => 0,
          );
@@ -175,7 +187,7 @@ my $subc = sub {
     my %args = @_;
     my $name = $args{name};
 
-    my $s = {ok=>{}, wantodd=>{}};
+    my $s = {ok=>{}, want_odd=>{}};
     if ($args{name}) {
         $s->{$name};
     } else {
@@ -189,7 +201,7 @@ test_run(name      => 'coderef subcommands (a)',
      );
 test_run(name      => 'coderef subcommands (b)',
          args      => {module=>'Foo', subcommands=>$subc},
-         argv      => [qw/wantodd 4/],
+         argv      => [qw/want_odd 4/],
          exit_code => 100,
          output_re => qr/hate/,
      );
