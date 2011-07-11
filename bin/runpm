@@ -3,7 +3,7 @@
 # workaround for dzil
 package runpm;
 BEGIN {
-  $runpm::VERSION = '0.31';
+  $runpm::VERSION = '0.32';
 }
 
 use 5.010;
@@ -36,7 +36,7 @@ USAGE
     exit 0;
 }
 
-for my $dir (@{ $opts{library} }) { require lib; lib::import($dir) }
+for my $dir (@{ $opts{library} }) { require lib; lib->import($dir) }
 
 my $module = shift @ARGV;
 my $modulep = $module;
@@ -72,7 +72,7 @@ runpm - Run Perl module as a command-line application
 
 =head1 VERSION
 
-version 0.31
+version 0.32
 
 =head1 SYNOPSIS
 

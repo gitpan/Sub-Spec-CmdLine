@@ -218,6 +218,7 @@ test_run(name      => 'coderef subcommands (c)',
 # XXX test arg: spec coderef
 # XXX test arg: complete_arg, complete_args (main / per-subcommand)
 # XXX test arg: allow_unknown_args (main / per-subcommand)
+# XXX test runpm -I (or move to run()?)
 done_testing();
 
 sub test_run {

@@ -1,5 +1,12 @@
 Revision history for Sub::Spec::CmdLine
 
+0.32     2011-07-10
+
+         [BUG FIXES]
+
+         * runpm: fix -I.
+
+
 0.31     2011-07-10
 
          [ENHANCEMENTS]
