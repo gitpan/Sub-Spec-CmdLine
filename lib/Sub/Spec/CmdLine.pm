@@ -1,6 +1,6 @@
 package Sub::Spec::CmdLine;
 BEGIN {
-  $Sub::Spec::CmdLine::VERSION = '0.32';
+  $Sub::Spec::CmdLine::VERSION = '0.33';
 }
 # ABSTRACT: Access Perl subs via command line
 
@@ -11,152 +11,13 @@ use Log::Any '$log';
 
 require Exporter;
 our @ISA       = qw(Exporter);
-our @EXPORT_OK = qw(parse_argv gen_usage format_result run);
+our @EXPORT_OK = qw(gen_usage format_result run);
 
+use Sub::Spec::GetArgs::Argv qw(get_args_from_argv);
 use Sub::Spec::Utils; # tmp, for _parse_schema
 
 sub _parse_schema {
     Sub::Spec::Utils::_parse_schema(@_);
-}
-
-my $_pa_skip_check_required_args;
-sub parse_argv {
-    require Getopt::Long;
-    require YAML::Syck; $YAML::Syck::ImplicitTyping = 1;
-
-    my ($argv, $sub_spec, $opts) = @_;
-    my $args_spec = $sub_spec->{args} // {};
-    $args_spec = { map { $_ => _parse_schema($args_spec->{$_}) }
-                       keys %$args_spec };
-    $opts //= {};
-    $opts->{strict} //= 1;
-    $log->tracef("-> parse_argv(), argv=%s", $argv);
-
-    my %go_spec;
-
-    my $args = {};
-    while (my ($name, $schema) = each %$args_spec) {
-        my $opt;
-        my @name = ($name);
-        push @name, $name if $name =~ s/_/-/g; # allow --foo_bar and --foo-bar
-        for (@name) {
-            if ($schema->{type} eq 'bool') {
-                $opt = "$_!";
-            } else {
-                $opt = "$_=s";
-            }
-            #$go_spec{$opt} = sub { $args->{$name[0]} = $_[0] };
-            $go_spec{$opt} = \$args->{$name[0]};
-        }
-        my $aliases = $schema->{attr_hashes}[0]{arg_aliases};
-        if ($aliases) {
-            while (my ($alias, $alinfo) = each %$aliases) {
-                my $opt;
-                if ($schema->{type} eq 'bool') {
-                    $opt = "$alias!";
-                } else {
-                    $opt = "$alias=s";
-                }
-                if ($alinfo->{code}) {
-                    $go_spec{$opt} = sub {
-                        $alinfo->{code}->(
-                            args    => $args,
-                            arg_ref => \$args->{$name[0]},
-                        );
-                    };
-                } else {
-                    $go_spec{$opt} = \$args->{$name[0]};
-                }
-            }
-        }
-    }
-
-    my $extra_go = $opts->{extra_getopts} // {};
-    while (my ($k, $v) = each %$extra_go) {
-        my $k_ = $k; $k_ =~ s/-/_/g;
-        next if $go_spec{$k} || $go_spec{"--$k"} || $args_spec->{$k_};
-        $go_spec{$k} = $v;
-    }
-
-    $_pa_skip_check_required_args = 0;
-
-    $log->tracef("GetOptions rule: %s", \%go_spec);
-    Getopt::Long::Configure(
-        $opts->{strict} ? "no_pass_through" : "pass_through",
-        "no_ignore_case", "permute");
-    my $result = Getopt::Long::GetOptionsFromArray($argv, %go_spec);
-    unless ($result) {
-        die BlankStr->new if $opts->{strict};
-    }
-
-    # process arg_pos
-  ARGV:
-    for my $i (reverse 0..@$argv-1) {
-        while (my ($name, $schema) = each %$args_spec) {
-            my $ah0 = $schema->{attr_hashes}[0];
-            my $o = $ah0->{arg_pos};
-            if (defined($o) && $o == $i) {
-                if (defined($args->{$name})) {
-                    die "You specified option --$name but also argument #".
-                        ($i+1)."\n" if $opts->{strict};
-                }
-                if ($ah0->{arg_greedy}) {
-                    $args->{$name} = [splice(@$argv, $i)];
-                    my $j = $i;
-                    last ARGV;
-                } else {
-                    $args->{$name} = splice(@$argv, $i, 1);
-                }
-            }
-        }
-    }
-
-    #$log->tracef("tmp args result (after arg_pos processing): %s, argv: %s",
-    #             $args, $argv);
-    if (@$argv) {
-        die "Error: extra argument(s): ".join(", ", @$argv)."\n"
-            if $opts->{strict};
-    }
-
-    # check required args & parse yaml/etc
-    unless ($_pa_skip_check_required_args) {
-        while (my ($name, $schema) = each %$args_spec) {
-            if ($schema->{attr_hashes}[0]{required} &&
-                    !defined($args->{$name})) {
-                die "Missing required argument: $name\n" if $opts->{strict};
-            }
-            my $parse_yaml;
-            my $type = $schema->{type};
-            # XXX more proper checking, e.g. check any/all recursively for
-            # nonscalar types. check base type.
-            $log->tracef("name=%s, arg=%s, parse_yaml=%s",
-                         $name, $args->{$name}, $parse_yaml);
-            $parse_yaml++ unless $type =~ /^(str|num|int|float|bool)$/;
-            if ($parse_yaml && defined($args->{$name})) {
-                if (ref($args->{$name}) eq 'ARRAY') {
-                    # XXX check whether each element needs to be YAML or not
-                    $args->{$name} = [
-                        map { YAML::Syck::Load($_) } @{$args->{$name}}
-                    ];
-                } elsif (!ref($args->{$name})) {
-                    $args->{$name} = YAML::Syck::Load($args->{$name});
-                } else {
-                    die "BUG: Why is \$args->{$name} ".
-                        ref($args->{$name})."?";
-                }
-            }
-
-            # XXX special parsing of type = date, accept
-        }
-    }
-
-    # cleanup undefined args
-    for (keys %$args) {
-        delete $args->{$_} unless defined($args->{$_});
-    }
-
-    $log->tracef("<- parse_argv(), args=%s, remaining argv=%s", $args, $argv);
-    $args;
 }
 
 sub gen_usage($;$) {
@@ -526,14 +387,18 @@ sub run {
     }
 
     my %opts = (format => undef, action => 'run');
-    Getopt::Long::Configure("pass_through", "no_ignore_case", "no_permute");
+    my $old_go_opts = Getopt::Long::Configure(
+        "pass_through", "no_ignore_case", "no_permute");
     my %getopts = (
-        "list"       => sub { $_pa_skip_check_required_args++;
-                              $opts{action} = 'list'     },
-        "version"    => sub { $_pa_skip_check_required_args++;
-                              $opts{action} = 'version'  },
-        "help"       => sub { $_pa_skip_check_required_args++;
-                              $opts{action} = 'help'     },
+        "list"       => sub {
+            $Sub::Spec::GetArgs::Argv::_pa_skip_check_required_args++;
+            $opts{action} = 'list'     },
+        "version"    => sub {
+            $Sub::Spec::GetArgs::Argv::_pa_skip_check_required_args++;
+            $opts{action} = 'version'  },
+        "help"       => sub {
+            $Sub::Spec::GetArgs::Argv::_pa_skip_check_required_args++;
+            $opts{action} = 'help'     },
 
         "text"       => sub { $opts{format} = 'text'     },
         "yaml"       => sub { $opts{format} = 'yaml'     },
@@ -542,13 +407,14 @@ sub run {
         "nopretty"   => sub { $opts{format} = 'nopretty' },
     );
     # aliases. we don't use "version|v" etc so the key can be compared with spec
-    # arg in parse_argv()
+    # arg in get_args_from_argv()
     $getopts{l} = $getopts{list};
     $getopts{v} = $getopts{version};
     $getopts{h} = $getopts{help};
     $getopts{'please_help_me|?'} = $getopts{help}; # Go::L doesn't accept '?'
 
     Getopt::Long::GetOptions(%getopts);
+    Getopt::Long::Configure($old_go_opts);
 
     my $cmd = $args{cmd};
     if (!$cmd) {
@@ -652,17 +518,16 @@ sub run {
     # parse argv
     my $args;
     if ($spec && $opts{action} eq 'run') {
-        my $popts = {};
-        $popts->{strict} = 0
+        my %ga_args = (argv=>\@ARGV, spec=>$spec);
+        $ga_args{strict} = 0
             if $subc->{allow_unknown_args} // $args{allow_unknown_args};
 
         # this allows us to catch --help, --version, etc specified after
         # subcommand name (if it doesn't collide with any spec arg). for
         # convenience, e.g.: allowing 'cmd subcmd --help' in addition to 'cmd
         # --help subcmd'.
-        $popts->{extra_getopts} = \%getopts;
-
-        $args = parse_argv(\@ARGV, $spec, $popts);
+        $ga_args{extra_getopts} = \%getopts;
+        $args = get_args_from_argv(%ga_args);
     }
 
     # handle --list
@@ -739,13 +604,6 @@ sub run {
     if ($exit) { exit $exit_code } else { return $exit_code }
 }
 
-package BlankStr;
-BEGIN {
-  $BlankStr::VERSION = '0.32';
-}
-use overload q{""} => sub { " \b" };
-sub new { bless(\$_[0], $_[0]) }
-
 1;
 
 
@@ -757,7 +615,7 @@ Sub::Spec::CmdLine - Access Perl subs via command line
 
 =head1 VERSION
 
-version 0.32
+version 0.33
 
 =head1 SYNOPSIS
 
@@ -817,80 +675,9 @@ accessible from the command-line.
 This module uses L<Log::Any> logging framework. Use something like
 L<Log::Any::App>, etc to see more logging statements for debugging.
 
-NOTE: This module is not ready for public consumption yet. It will be after
-L<Data::Sah> and L<Sub::Spec> is released.
-
 =head1 FUNCTIONS
 
 None of the functions are exported by default, but they are exportable.
-
-=head2 parse_argv(\@argv, $sub_spec[, \%opts]) => \%args
-
-Using information in spec's B<args> clause, parse command line argument @argv
-into hash %args, suitable for passing into subs.
-
-Uses Getopt::Long to parse the result.
-
-As with GetOptions, this function modifies its argument, @argv.
-
-Why would one use this function instead of using Getopt::Long directly? Among
-other reasons, we want YAML parsing (ability to pass data structures via command
-line) and parsing of arg_pos and arg_greedy. And of course, if you already write
-subroutine spec, might as well use it.
-
-Options in %opts:
-
-=over 4
-
-=item * strict => BOOL (default 1)
-
-If set to 0, will still return parsed argv even if there are errors.
-
-=item * extra_getopts => HASHREF
-
-If specified, add extra Getopt::Long specification (as long as it doesn't clash
-with spec arg). This is used, for example, by run() to add general options
---help, --version, --list, etc so it can mixed with spec arg options, for
-convenience.
-
-=back
-
-=head3 How parse_argv() translates the args spec clause
-
-Bool types can be specified using
-
- --argname
-
-or
-
- --noargname
-
-All the other types can be specified using
-
- --argname VALUE
-
-or
-
- --argname=VALUE
-
-VALUE will be parsed as YAML for nonscalar types.
-
-parse_argv() also takes B<arg_pos> and B<arg_greedy> type clause in schema into
-account, for example:
-
- $SPEC{multiply2} = {
-     summary => 'Multiply 2 numbers (a & b)',
-     args => {
-         a => ['num*' => {arg_pos=>0}],
-         b => ['num*' => {arg_pos=>1}],
-     }
- }
-
-then on the command-line any of below is valid:
-
- % multiply2 --a 2 --b 3
- % multiply2 2 --b 3; # first non-option argument is fed into a (arg_pos=0)
- % multiply2 2 3;     # first argument is fed into a, second into b (arg_pos=1)
 
 =head2 gen_usage($sub_spec) => TEXT
 
@@ -926,9 +713,11 @@ steps:
 
 =over 4
 
-=item * Parse command-line options in @ARGV (using parse_argv())
+=item * Parse command-line options in @ARGV (using Sub::Spec::GetArgs::Argv)
 
 Also, display help using gen_usage() if given '--help' or '-h' or '-?'.
+
+See L<Sub::Spec::GetArgs::Argv> for details on parsing.
 
 =item * Call sub
 
@@ -940,18 +729,24 @@ Also, display help using gen_usage() if given '--help' or '-h' or '-?'.
 
 =back
 
-Arguments:
+Arguments (* denotes required arguments):
 
 =over 4
 
 =item * summary => STR
 
+Used when displaying help message or version.
+
 =item * module => STR
 
-Currently this must be supplied if you want --version, even if you use
-subcommands. --version gets $VERSION from the main module.
+Currently this must be supplied if you want --version to work, even if you use
+subcommands. --version gets $VERSION from the main module. Not required if you
+specify 'spec'.
 
 =item * sub => STR
+
+Required if you only want to execute one subroutine. Alternatively you can
+provide multiple subroutines from which the user can choose (see 'subcommands').
 
 =item * spec => HASH | CODEREF
 
@@ -976,14 +771,14 @@ have several subs to run, assign each of them to a subcommand, e.g.:
    sync    => { }, # sub defaults to the same name as subcommand name
  },
 
-Available argument for each subcommand: module (defaults to main B<module>
-argument), sub (defaults to subcommand name), summary, help, category (for
-arrangement when listing commands), run, complete_arg, complete_args.
+Available argument for each subcommand: 'module' (defaults to main B<module>
+argument), 'sub' (defaults to subcommand name), 'summary', 'help', 'category'
+(for arrangement when listing commands), 'run', 'complete_arg', 'complete_args'.
 
 Subcommand argument can be a code reference, in which case it will be called
-with C<%args> containing: name (subcommand name), args (arguments to run()). The
-code is expected to return structure for argument with specified name, or, when
-name is not specified, a hashref containing all subcommand arguments.
+with C<%args> containing: 'name' (subcommand name), 'args' (arguments to run()).
+The code is expected to return structure for argument with specified name, or,
+when name is not specified, a hashref containing all subcommand arguments.
 
 =item * run => CODEREF
 
@@ -991,37 +786,44 @@ Instead of running command by invoking subroutine specified by B<module> and
 B<sub>, run this code instead. Code is expected to return a response structure
 ([CODE, MESSAGE, DATA]).
 
-=item * exit => BOOL (optional, default 1)
+=item * exit => BOOL (default 1)
 
 If set to 0, instead of exiting with exit(), return the exit code instead.
 
-=item * load => BOOL (optional, default 1)
+=item * load => BOOL (default 1)
 
 If set to 0, do not try to load (require()) the module.
 
-=item * allow_unknown_args => BOOL (optional, default 0)
+=item * allow_unknown_args => BOOL (default 0)
 
-=item * complete_arg  => {ARGNAME => CODEREF, ...}
+If set to 1, unknown command-line argument will not result in fatal error.
+
+=item * complete_arg => {ARGNAME => CODEREF, ...}
 
 Under bash completion, when completing argument value, you can supply a code to
-provide its completion. Code will be called with %args containing word, words,
+provide its completion. Code will be called with %args containing: word, words,
 arg, args.
 
 =item * complete_args => CODEREF
 
 Under bash completion, when completing argument value, you can supply a code to
-provide its completion. Code will be called with %args containing word, words,
+provide its completion. Code will be called with %args containing: word, words,
 arg, args.
 
 =item * custom_completer => CODEREF
 
-To be passed to BashComplete's bash_complete_spec_arg(). This can be used e.g.
-to change bash completion code (e.g. calling bash_complete_spec_arg()
-recursively) based on context.
+To be passed to L<Sub::Spec::BashComplete>'s bash_complete_spec_arg(). This can
+be used e.g. to change bash completion code (e.g. calling
+bash_complete_spec_arg() recursively) based on context.
+
+=item * dash_to_underscore => BOOL (optional, default 0)
+
+If set to 1, subcommand like a-b-c will be converted to a_b_c. This is for
+convenience when typing in command line.
 
 =back
 
-run() can also perform completion for bash (if L<Sub::Spec::BashComplete> is
+run() can also perform completion for bash (if Sub::Spec::BashComplete is
 available). To get bash completion for your B<perlprog>, just type this in bash:
 
  % complete -C /path/to/perlprog perlprog
@@ -1030,7 +832,7 @@ You can add that line in bash startup file (~/.bashrc, /etc/bash.bashrc, etc).
 
 =head1 FAQ
 
-=head2 Why is nonscalar arguments parsed as YAML instead of other markup (JSON, etc)?
+=head2 Why is nonscalar arguments parsed as YAML instead of JSON/etc?
 
 I think YAML is nicer in command-line because quotes are optional in a few
 places:

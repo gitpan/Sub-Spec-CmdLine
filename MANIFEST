@@ -9,7 +9,6 @@ bin/runpm
 dist.ini
 lib/Sub/Spec/CmdLine.pm
 t/00-compile.t
-t/parse_argv.t
 t/release-pod-coverage.t
 t/release-pod-syntax.t
 t/run.t

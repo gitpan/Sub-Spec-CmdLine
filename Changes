@@ -1,5 +1,11 @@
 Revision history for Sub::Spec::CmdLine
 
+0.33     2011-07-26
+
+         No functional changes. Adjust code to use the new
+         Sub::Spec::GetArgs::Argv. Localize Getopt::Long::Configure() effect.
+
+
 0.32     2011-07-10
 
          [BUG FIXES]

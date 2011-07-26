@@ -2,7 +2,7 @@ NAME
     Sub::Spec::CmdLine - Access Perl subs via command line
 
 VERSION
-    version 0.32
+    version 0.33
 
 SYNOPSIS
     In your module:
@@ -60,73 +60,8 @@ DESCRIPTION
     This module uses Log::Any logging framework. Use something like
     Log::Any::App, etc to see more logging statements for debugging.
 
-    NOTE: This module is not ready for public consumption yet. It will be
-    after Data::Sah and Sub::Spec is released.
-
 FUNCTIONS
     None of the functions are exported by default, but they are exportable.
-
-  parse_argv(\@argv, $sub_spec[, \%opts]) => \%args
-    Using information in spec's args clause, parse command line argument
-    @argv into hash %args, suitable for passing into subs.
-
-    Uses Getopt::Long to parse the result.
-
-    As with GetOptions, this function modifies its argument, @argv.
-
-    Why would one use this function instead of using Getopt::Long directly?
-    Among other reasons, we want YAML parsing (ability to pass data
-    structures via command line) and parsing of arg_pos and arg_greedy. And
-    of course, if you already write subroutine spec, might as well use it.
-
-    Options in %opts:
-
-    *   strict => BOOL (default 1)
-
-        If set to 0, will still return parsed argv even if there are errors.
-
-    *   extra_getopts => HASHREF
-
-        If specified, add extra Getopt::Long specification (as long as it
-        doesn't clash with spec arg). This is used, for example, by run() to
-        add general options --help, --version, --list, etc so it can mixed
-        with spec arg options, for convenience.
-
-   How parse_argv() translates the args spec clause
-    Bool types can be specified using
-
-     --argname
-
-    or
-
-     --noargname
-
-    All the other types can be specified using
-
-     --argname VALUE
-
-    or
-
-     --argname=VALUE
-
-    VALUE will be parsed as YAML for nonscalar types.
-
-    parse_argv() also takes arg_pos and arg_greedy type clause in schema
-    into account, for example:
-
-     $SPEC{multiply2} = {
-         summary => 'Multiply 2 numbers (a & b)',
-         args => {
-             a => ['num*' => {arg_pos=>0}],
-             b => ['num*' => {arg_pos=>1}],
-         }
-     }
-
-    then on the command-line any of below is valid:
-
-     % multiply2 --a 2 --b 3
-     % multiply2 2 --b 3; # first non-option argument is fed into a (arg_pos=0)
-     % multiply2 2 3;     # first argument is fed into a, second into b (arg_pos=1)
 
   gen_usage($sub_spec) => TEXT
     Generate usage information for a sub (typically used for --help).
@@ -154,10 +89,12 @@ FUNCTIONS
     Run subroutine(s) from the command line, which essentially comprises
     these steps:
 
-    *   Parse command-line options in @ARGV (using parse_argv())
+    *   Parse command-line options in @ARGV (using Sub::Spec::GetArgs::Argv)
 
         Also, display help using gen_usage() if given '--help' or '-h' or
         '-?'.
+
+        See Sub::Spec::GetArgs::Argv for details on parsing.
 
     *   Call sub
 
@@ -167,16 +104,23 @@ FUNCTIONS
 
         0 if 200, or CODE-300.
 
-    Arguments:
+    Arguments (* denotes required arguments):
 
     *   summary => STR
 
+        Used when displaying help message or version.
+
     *   module => STR
 
-        Currently this must be supplied if you want --version, even if you
-        use subcommands. --version gets $VERSION from the main module.
+        Currently this must be supplied if you want --version to work, even
+        if you use subcommands. --version gets $VERSION from the main
+        module. Not required if you specify 'spec'.
 
     *   sub => STR
+
+        Required if you only want to execute one subroutine. Alternatively
+        you can provide multiple subroutines from which the user can choose
+        (see 'subcommands').
 
     *   spec => HASH | CODEREF
 
@@ -203,13 +147,13 @@ FUNCTIONS
            sync    => { }, # sub defaults to the same name as subcommand name
          },
 
-        Available argument for each subcommand: module (defaults to main
-        module argument), sub (defaults to subcommand name), summary, help,
-        category (for arrangement when listing commands), run, complete_arg,
-        complete_args.
+        Available argument for each subcommand: 'module' (defaults to main
+        module argument), 'sub' (defaults to subcommand name), 'summary',
+        'help', 'category' (for arrangement when listing commands), 'run',
+        'complete_arg', 'complete_args'.
 
         Subcommand argument can be a code reference, in which case it will
-        be called with %args containing: name (subcommand name), args
+        be called with %args containing: 'name' (subcommand name), 'args'
         (arguments to run()). The code is expected to return structure for
         argument with specified name, or, when name is not specified, a
         hashref containing all subcommand arguments.
@@ -220,34 +164,42 @@ FUNCTIONS
         module and sub, run this code instead. Code is expected to return a
         response structure ([CODE, MESSAGE, DATA]).
 
-    *   exit => BOOL (optional, default 1)
+    *   exit => BOOL (default 1)
 
         If set to 0, instead of exiting with exit(), return the exit code
         instead.
 
-    *   load => BOOL (optional, default 1)
+    *   load => BOOL (default 1)
 
         If set to 0, do not try to load (require()) the module.
 
-    *   allow_unknown_args => BOOL (optional, default 0)
+    *   allow_unknown_args => BOOL (default 0)
+
+        If set to 1, unknown command-line argument will not result in fatal
+        error.
 
     *   complete_arg => {ARGNAME => CODEREF, ...}
 
         Under bash completion, when completing argument value, you can
         supply a code to provide its completion. Code will be called with
-        %args containing word, words, arg, args.
+        %args containing: word, words, arg, args.
 
     *   complete_args => CODEREF
 
         Under bash completion, when completing argument value, you can
         supply a code to provide its completion. Code will be called with
-        %args containing word, words, arg, args.
+        %args containing: word, words, arg, args.
 
     *   custom_completer => CODEREF
 
-        To be passed to BashComplete's bash_complete_spec_arg(). This can be
-        used e.g. to change bash completion code (e.g. calling
+        To be passed to Sub::Spec::BashComplete's bash_complete_spec_arg().
+        This can be used e.g. to change bash completion code (e.g. calling
         bash_complete_spec_arg() recursively) based on context.
+
+    *   dash_to_underscore => BOOL (optional, default 0)
+
+        If set to 1, subcommand like a-b-c will be converted to a_b_c. This
+        is for convenience when typing in command line.
 
     run() can also perform completion for bash (if Sub::Spec::BashComplete
     is available). To get bash completion for your perlprog, just type this
@@ -259,7 +211,7 @@ FUNCTIONS
     etc).
 
 FAQ
-  Why is nonscalar arguments parsed as YAML instead of other markup (JSON, etc)?
+  Why is nonscalar arguments parsed as YAML instead of JSON/etc?
     I think YAML is nicer in command-line because quotes are optional in a
     few places:
 
