@@ -1,6 +1,6 @@
 package Sub::Spec::CmdLine;
 BEGIN {
-  $Sub::Spec::CmdLine::VERSION = '0.33';
+  $Sub::Spec::CmdLine::VERSION = '0.34';
 }
 # ABSTRACT: Access Perl subs via command line
 
@@ -615,7 +615,7 @@ Sub::Spec::CmdLine - Access Perl subs via command line
 
 =head1 VERSION
 
-version 0.33
+version 0.34
 
 =head1 SYNOPSIS
 

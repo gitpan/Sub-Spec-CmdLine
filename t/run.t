@@ -240,7 +240,7 @@ sub test_run {
 
     subtest $args{name} => sub {
         if ($args{dies}) {
-            ok($eval_err, "dies");
+            ok($eval_err || ref($eval_err), "dies");
         } else {
             ok(!$eval_err, "doesn't die") or diag("dies: $eval_err");
         }

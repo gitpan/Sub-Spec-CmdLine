@@ -1,9 +1,21 @@
 Revision history for Sub::Spec::CmdLine
 
+0.34     2011-08-03
+
+         No functional changes. Fixed test script to adjust to new
+         Object::BlankStr [CT]. Updated dependencies.
+
+
 0.33     2011-07-26
 
-         No functional changes. Adjust code to use the new
-         Sub::Spec::GetArgs::Argv. Localize Getopt::Long::Configure() effect.
+         [INCOMPATIBLE CHANGES]
+
+         Refactoring: move parse_argv() to
+         Sub::Spec::GetArgs::Argv::get_args_from_argv().
+
+         [ENHANCEMENTS]
+
+         Localize Getopt::Long::Configure() effect.
 
 
 0.32     2011-07-10
