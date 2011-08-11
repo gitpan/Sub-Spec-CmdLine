@@ -1,6 +1,6 @@
 package Sub::Spec::CmdLine;
 BEGIN {
-  $Sub::Spec::CmdLine::VERSION = '0.34';
+  $Sub::Spec::CmdLine::VERSION = '0.35';
 }
 # ABSTRACT: Access Perl subs via command line
 
@@ -13,6 +13,8 @@ require Exporter;
 our @ISA       = qw(Exporter);
 our @EXPORT_OK = qw(gen_usage format_result run);
 
+use Data::Format::Pretty qw(format_pretty);
+use Module::Loaded;
 use Sub::Spec::GetArgs::Argv qw(get_args_from_argv);
 use Sub::Spec::Utils; # tmp, for _parse_schema
 
@@ -144,23 +146,16 @@ sub gen_usage($;$) {
 }
 
 sub format_result {
-    require Data::Format::Pretty::Console;
-    require JSON;
-    require PHP::Serialization;
-    require YAML::Syck; $YAML::Syck::ImplicitTyping = 1;
-
-    state $json = JSON->new->allow_nonref;
-
     my ($res, $format, $opts) = @_;
     $format //= 'text';
     $opts   //= {};
 
     if ($format eq 'yaml') {
-        return YAML::Syck::Dump($res);
+        return format_pretty($res, {module=>'YAML'});
     } elsif ($format eq 'json') {
-        return $json->encode($res);
+        return format_pretty($res, {module=>'JSON'});
     } elsif ($format eq 'php') {
-        return PHP::Serialization::serialize($res);
+        return format_pretty($res, {module=>'PHP'});
     } elsif ($format =~ /^(text|pretty|nopretty)$/) {
         if (!defined($res->[2])) {
             return $res->[0] == 200 ?
@@ -169,13 +164,11 @@ sub format_result {
         }
         my $r = $res->[0] == 200 ? $res->[2] : $res;
         if ($format eq 'text') {
-            return Data::Format::Pretty::Console::format_pretty($r);
+            return format_pretty($r, {module=>'Console'});
         } elsif ($format eq 'pretty') {
-            return Data::Format::Pretty::Console::format_pretty(
-                $r, {interactive=>1});
+            return format_pretty($r, {module=>'Text'});
         } elsif ($format eq 'nopretty') {
-            return Data::Format::Pretty::Console::format_pretty(
-                $r, {interactive=>0});
+            return format_pretty($r, {module=>'SimpleText'});
         }
     }
 
@@ -413,6 +406,13 @@ sub run {
     $getopts{h} = $getopts{help};
     $getopts{'please_help_me|?'} = $getopts{help}; # Go::L doesn't accept '?'
 
+    # convenience for Log::Any::App-using apps
+    if (is_loaded('Log::Any::App')) {
+        for (qw/quiet verbose debug trace log_level/) {
+            $getopts{$_} = sub {};
+        }
+    }
+
     Getopt::Long::GetOptions(%getopts);
     Getopt::Long::Configure($old_go_opts);
 
@@ -615,7 +615,7 @@ Sub::Spec::CmdLine - Access Perl subs via command line
 
 =head1 VERSION
 
-version 0.34
+version 0.35
 
 =head1 SYNOPSIS
 

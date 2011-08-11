@@ -3,7 +3,7 @@
 # workaround for dzil
 package runpm;
 BEGIN {
-  $runpm::VERSION = '0.34';
+  $runpm::VERSION = '0.35';
 }
 
 use 5.010;
@@ -72,7 +72,7 @@ runpm - Run Perl module as a command-line application
 
 =head1 VERSION
 
-version 0.34
+version 0.35
 
 =head1 SYNOPSIS
 

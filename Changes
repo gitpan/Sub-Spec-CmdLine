@@ -1,5 +1,11 @@
 Revision history for Sub::Spec::CmdLine
 
+0.35     2011-08-11
+
+         Uses Data::Format::Pretty for result formatting. JSON output is now
+         pretty-printed by default.
+
+
 0.34     2011-08-03
 
          No functional changes. Fixed test script to adjust to new
