@@ -1,5 +1,11 @@
 Revision history for Sub::Spec::CmdLine
 
+0.36     2011-08-25
+
+         No functional changes. gen_usage() split to its own dist:
+         Sub-Spec-To-Text. Update to Sub::Spec 0.15.
+
+
 0.35     2011-08-11
 
          Uses Data::Format::Pretty for result formatting. JSON output is now

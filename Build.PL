@@ -17,7 +17,7 @@ my %module_build_args = (
     'Steven Haryanto <stevenharyanto@gmail.com>'
   ],
   'dist_name' => 'Sub-Spec-CmdLine',
-  'dist_version' => '0.35',
+  'dist_version' => '0.36',
   'license' => 'perl',
   'module_name' => 'Sub::Spec::CmdLine',
   'recommends' => {},
@@ -25,7 +25,6 @@ my %module_build_args = (
   'requires' => {
     'Capture::Tiny' => '0',
     'Data::Clone' => '0',
-    'Data::Dump::Partial' => '0',
     'Data::Format::Pretty' => '0',
     'Data::Format::Pretty::Console' => '0',
     'Data::Format::Pretty::JSON' => '0',
@@ -34,10 +33,11 @@ my %module_build_args = (
     'JSON' => '0',
     'List::MoreUtils' => '0',
     'Log::Any' => '0',
-    'Sub::Spec' => '0.04',
-    'Sub::Spec::BashComplete' => '0.15',
-    'Sub::Spec::GetArgs::Argv' => '0.04',
+    'Sub::Spec' => '0.15',
+    'Sub::Spec::BashComplete' => '0.16',
+    'Sub::Spec::GetArgs::Argv' => '0.05',
     'Sub::Spec::Runner' => '0.18',
+    'Sub::Spec::To::Text::Usage' => '0',
     'Test::More' => '0.96',
     'perl' => '5.010000'
   },

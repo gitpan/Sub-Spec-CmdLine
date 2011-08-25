@@ -1,6 +1,6 @@
 package Sub::Spec::CmdLine;
 BEGIN {
-  $Sub::Spec::CmdLine::VERSION = '0.35';
+  $Sub::Spec::CmdLine::VERSION = '0.36';
 }
 # ABSTRACT: Access Perl subs via command line
 
@@ -11,139 +11,12 @@ use Log::Any '$log';
 
 require Exporter;
 our @ISA       = qw(Exporter);
-our @EXPORT_OK = qw(gen_usage format_result run);
+our @EXPORT_OK = qw(format_result run);
 
 use Data::Format::Pretty qw(format_pretty);
 use Module::Loaded;
 use Sub::Spec::GetArgs::Argv qw(get_args_from_argv);
-use Sub::Spec::Utils; # tmp, for _parse_schema
-
-sub _parse_schema {
-    Sub::Spec::Utils::_parse_schema(@_);
-}
-
-sub gen_usage($;$) {
-    require Data::Dump::Partial;
-    require List::MoreUtils;
-
-    my ($sub_spec, $opts) = @_;
-    $opts //= {};
-
-    my $usage = "";
-
-    my $cmd = $opts->{cmd};
-    if ($sub_spec->{name}) {
-        $cmd = ($sub_spec->{_package} ? "$sub_spec->{_package}::" : "") .
-            $sub_spec->{name};
-    }
-    if ($sub_spec->{summary}) {
-        $usage .= ($cmd ? "$cmd - " : "") . "$sub_spec->{summary}\n\n";
-    }
-
-    my $desc = $sub_spec->{description};
-    if ($desc) {
-        $desc =~ s/^\n+//; $desc =~ s/\n+$//;
-        $usage .= "$desc\n\n";
-    }
-
-    my $args  = $sub_spec->{args} // {};
-    my $rargs = $sub_spec->{required_args};
-    $args = { map {$_ => _parse_schema($args->{$_})} keys %$args };
-    my $has_cat = grep { $_->{attr_hashes}[0]{arg_category} }
-        values %$args;
-    my $prev_cat;
-    my $noted_star_req;
-    for my $name (sort {
-        (($args->{$a}{attr_hashes}[0]{arg_category} // "") cmp
-             ($args->{$b}{attr_hashes}[0]{arg_category} // "")) ||
-                 (($args->{$a}{attr_hashes}[0]{arg_pos} // 9999) <=>
-                      ($args->{$b}{attr_hashes}[0]{arg_pos} // 9999)) ||
-                          ($a cmp $b) } keys %$args) {
-        my $arg = $args->{$name};
-        my $ah0 = $arg->{attr_hashes}[0];
-
-        my $cat = $ah0->{arg_category} // "";
-        if (!defined($prev_cat) || $prev_cat ne $cat) {
-            $usage .= "\n" if defined($prev_cat);
-            $usage .= ($cat ? ucfirst("$cat options") :
-                           ($has_cat ? "General options" :
-                                ($opts->{options_name} ?
-                                     "$opts->{options_name} options" :
-                                         "Options")));
-            $usage .= " (* denotes required options)"
-                unless $noted_star_req++;
-            $usage .= ":\n";
-            $prev_cat = $cat;
-        }
-
-        my $arg_desc = "";
-
-        if ($arg->{type} eq 'any') {
-            my @schemas = map {_parse_schema($_)} @{$ah0->{of}};
-            my @types   = map {$_->{type}} @schemas;
-            @types      = sort List::MoreUtils::uniq(@types);
-            $arg_desc  .= "[" . join("|", @types) . "]";
-        } else {
-            $arg_desc  .= "[" . $arg->{type} . "]";
-        }
-
-        my $o = $ah0->{arg_pos};
-        my $g = $ah0->{arg_greedy};
-
-        $arg_desc .= " $ah0->{summary}" if $ah0->{summary};
-        $arg_desc .= " (one of: ".
-            Data::Dump::Partial::dumpp($ah0->{in}).")"
-                  if defined($ah0->{in});
-        $arg_desc .= " (default: ".
-            Data::Dump::Partial::dumpp($ah0->{default}).")"
-                  if defined($ah0->{default});
-
-        my $aliases = $ah0->{arg_aliases};
-        if ($aliases) {
-            $arg_desc .= "\n";
-            for (sort keys %$aliases) {
-                my $alinfo = $aliases->{$_};
-                $arg_desc .= join(
-                    "",
-                    "      ",
-                    (length == 1 ? "-$_" : "--$_"), " ",
-                    $alinfo->{summary} ? $alinfo->{summary} :
-                        "is alias for '$name'",
-                    "\n"
-                );
-            }
-        }
-
-        my $desc = $ah0->{description};
-        if ($desc) {
-            $desc =~ s/^\n+//; $desc =~ s/\n+$//;
-            # XXX format/rewrap
-            $desc =~ s/^/      /mg;
-            $arg_desc .= "\n$desc\n";
-        }
-
-        $usage .= sprintf("  --%-25s %s\n",
-                          $name . ($ah0->{required} ? "*" : "") .
-                              (defined($o) ? " [or arg ".($o+1).
-                                  ($g ? "-last":"")."]" : ""),
-                          $arg_desc);
-    }
-
-    if ($sub_spec->{cmdline_examples}) {
-        $usage .= "\nExamples:\n\n";
-        my $cmd = $opts->{cmd} // $0;
-        for my $ex (@{ $sub_spec->{cmdline_examples} }) {
-            $usage .= " % $cmd $ex->{cmd}\n";
-            my $desc = $ex->{description};
-            if ($desc) {
-                $desc =~ s/^\n+//; $desc =~ s/\n+$//;
-                $usage .= "\n$desc\n\n";
-            }
-        }
-    }
-
-    $usage;
-}
+use Sub::Spec::To::Text::Usage qw(spec_to_usage);
 
 sub format_result {
     my ($res, $format, $opts) = @_;
@@ -334,7 +207,7 @@ sub _run_help {
             $out .= $help;
         }
     } elsif ($spec) {
-        $out .= gen_usage($spec, {cmd=>$cmd});
+        $out .= spec_to_usage(spec=>$spec, command_name=>$cmd)->[2];
     } else {
             $out .= <<_;
 Usage:
@@ -615,7 +488,7 @@ Sub::Spec::CmdLine - Access Perl subs via command line
 
 =head1 VERSION
 
-version 0.35
+version 0.36
 
 =head1 SYNOPSIS
 
@@ -679,10 +552,6 @@ L<Log::Any::App>, etc to see more logging statements for debugging.
 
 None of the functions are exported by default, but they are exportable.
 
-=head2 gen_usage($sub_spec) => TEXT
-
-Generate usage information for a sub (typically used for --help).
-
 =head2 format_result($sub_res[, \%opts]) => TEXT
 
 Format result from sub into various formats
@@ -715,7 +584,8 @@ steps:
 
 =item * Parse command-line options in @ARGV (using Sub::Spec::GetArgs::Argv)
 
-Also, display help using gen_usage() if given '--help' or '-h' or '-?'.
+Also, display help using Sub::Spec::To::Text::Usage::spec_to_usage() if given
+'--help' or '-h' or '-?'.
 
 See L<Sub::Spec::GetArgs::Argv> for details on parsing.
 
@@ -755,7 +625,7 @@ supplied spec.
 
 =item * help => STRING | CODEREF
 
-Instead of generating help using gen_usage() from the spec, use the supplied
+Instead of generating help using spec_to_usage() from the spec, use the supplied
 help message (or help code, which is expected to return help text).
 
 =item * subcommands => {NAME => {ARGUMENT=>...}, ...} | CODEREF
@@ -849,8 +719,6 @@ as JSON can be added upon request.
 =head1 SEE ALSO
 
 L<Sub::Spec>
-
-L<Sub::Spec::Pod>
 
 L<MooseX::Getopt>
 

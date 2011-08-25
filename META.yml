@@ -16,7 +16,6 @@ name: Sub-Spec-CmdLine
 requires:
   Capture::Tiny: 0
   Data::Clone: 0
-  Data::Dump::Partial: 0
   Data::Format::Pretty: 0
   Data::Format::Pretty::Console: 0
   Data::Format::Pretty::JSON: 0
@@ -25,13 +24,14 @@ requires:
   JSON: 0
   List::MoreUtils: 0
   Log::Any: 0
-  Sub::Spec: 0.04
-  Sub::Spec::BashComplete: 0.15
-  Sub::Spec::GetArgs::Argv: 0.04
+  Sub::Spec: 0.15
+  Sub::Spec::BashComplete: 0.16
+  Sub::Spec::GetArgs::Argv: 0.05
   Sub::Spec::Runner: 0.18
+  Sub::Spec::To::Text::Usage: 0
   Test::More: 0.96
   perl: 5.010000
 resources:
   homepage: http://search.cpan.org/dist/Sub-Spec-CmdLine/
   repository: http://github.com/sharyanto/perl-Sub-Spec-CmdLine
-version: 0.35
+version: 0.36

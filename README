@@ -2,7 +2,7 @@ NAME
     Sub::Spec::CmdLine - Access Perl subs via command line
 
 VERSION
-    version 0.35
+    version 0.36
 
 SYNOPSIS
     In your module:
@@ -63,9 +63,6 @@ DESCRIPTION
 FUNCTIONS
     None of the functions are exported by default, but they are exportable.
 
-  gen_usage($sub_spec) => TEXT
-    Generate usage information for a sub (typically used for --help).
-
   format_result($sub_res[, \%opts]) => TEXT
     Format result from sub into various formats
 
@@ -91,8 +88,8 @@ FUNCTIONS
 
     *   Parse command-line options in @ARGV (using Sub::Spec::GetArgs::Argv)
 
-        Also, display help using gen_usage() if given '--help' or '-h' or
-        '-?'.
+        Also, display help using Sub::Spec::To::Text::Usage::spec_to_usage()
+        if given '--help' or '-h' or '-?'.
 
         See Sub::Spec::GetArgs::Argv for details on parsing.
 
@@ -129,8 +126,8 @@ FUNCTIONS
 
     *   help => STRING | CODEREF
 
-        Instead of generating help using gen_usage() from the spec, use the
-        supplied help message (or help code, which is expected to return
+        Instead of generating help using spec_to_usage() from the spec, use
+        the supplied help message (or help code, which is expected to return
         help text).
 
     *   subcommands => {NAME => {ARGUMENT=>...}, ...} | CODEREF
@@ -226,8 +223,6 @@ FAQ
 
 SEE ALSO
     Sub::Spec
-
-    Sub::Spec::Pod
 
     MooseX::Getopt
 
