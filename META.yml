@@ -7,7 +7,7 @@ build_requires:
 configure_requires:
   Module::Build: 0.3601
 dynamic_config: 0
-generated_by: 'Dist::Zilla version 4.200007, CPAN::Meta::Converter version 2.110930'
+generated_by: 'Dist::Zilla version 4.300006, CPAN::Meta::Converter version 2.113640'
 license: perl
 meta-spec:
   url: http://module-build.sourceforge.net/META-spec-v1.4.html
@@ -21,17 +21,19 @@ requires:
   Data::Format::Pretty::JSON: 0
   Data::Format::Pretty::PHPSerialization: 0
   Data::Format::Pretty::YAML: 0
+  Data::Sah: 0
   JSON: 0
   List::MoreUtils: 0
   Log::Any: 0
   Sub::Spec: 0.15
   Sub::Spec::BashComplete: 0.16
   Sub::Spec::GetArgs::Argv: 0.05
-  Sub::Spec::Runner: 0.18
+  Sub::Spec::Object: 0.02
+  Sub::Spec::Runner: 0.21
   Sub::Spec::To::Text::Usage: 0
   Test::More: 0.96
   perl: 5.010000
 resources:
   homepage: http://search.cpan.org/dist/Sub-Spec-CmdLine/
   repository: http://github.com/sharyanto/perl-Sub-Spec-CmdLine
-version: 0.36
+version: 0.37

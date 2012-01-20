@@ -1,8 +1,4 @@
 package Sub::Spec::CmdLine;
-BEGIN {
-  $Sub::Spec::CmdLine::VERSION = '0.36';
-}
-# ABSTRACT: Access Perl subs via command line
 
 use 5.010;
 use strict;
@@ -12,6 +8,8 @@ use Log::Any '$log';
 require Exporter;
 our @ISA       = qw(Exporter);
 our @EXPORT_OK = qw(format_result run);
+
+our $VERSION = '0.37'; # VERSION
 
 use Data::Format::Pretty qw(format_pretty);
 use Module::Loaded;
@@ -354,6 +352,21 @@ sub run {
         }
     }
 
+    # check whether we should add undo related command-line arguments
+    {
+        last unless $spec || $args{undo};
+        require Sub::Spec::Object;
+        my $ssspec = Sub::Spec::Object::ssspec($spec);
+        last unless $ssspec->feature('undo');
+
+        $opts{undo_action}    = 'do';
+        $getopts{undo_data}   = sub { $opts{undo_data} = shift };
+        $getopts{undo}        = sub { $opts{undo_action} = 'undo' };
+        $getopts{redo}        = sub { $opts{undo_action} = 'redo' };
+        $getopts{list_undos}  = sub { $opts{undo_action} = 'list_undos' };
+        $getopts{clear_undos} = sub { $opts{undo_action} = 'clear_undos' };
+    }
+
     # now that we have spec, detect (2) if we're being invoked for bash
     # completion and do completion, and exit.
     if ($ENV{COMP_LINE}) {
@@ -454,6 +467,8 @@ sub run {
             require Sub::Spec::Runner;
             my $runner = Sub::Spec::Runner->new;
             $runner->load_modules($load);
+            $runner->undo($opts{undo});
+            $runner->undo_data_dir($opts{undo_dir}) if $opts{undo_dir};
             eval { $runner->add("$module\::$sub", $args) };
             my $eval_err = $@;
             if ($eval_err) {
@@ -478,8 +493,10 @@ sub run {
 }
 
 1;
+# ABSTRACT: Access Perl subs via command line
 
 
+__END__
 =pod
 
 =head1 NAME
@@ -488,7 +505,7 @@ Sub::Spec::CmdLine - Access Perl subs via command line
 
 =head1 VERSION
 
-version 0.36
+version 0.37
 
 =head1 SYNOPSIS
 
@@ -542,11 +559,33 @@ In the command-line:
 
 =head1 DESCRIPTION
 
+B<NOTICE>: This module and the L<Sub::Spec> standard is deprecated as of Jan
+2012. L<Rinci> is the new specification to replace Sub::Spec, it is about 95%
+compatible with Sub::Spec, but corrects a few issues and is more generic.
+C<Perinci::*> is the Perl implementation for Rinci and many of its modules can
+handle existing Sub::Spec sub specs. See L<Perinci::CmdLine> which supersedes
+this module.
+
 This module utilize sub specs (as defined by L<Sub::Spec>) to let your subs be
 accessible from the command-line.
 
+This can be used to create a command-line application easily. What you'll get:
+
+=over 4
+
+=item * Command-line parsing (currently using Getopt::Long, with some tweaks)
+
+=item * Help message (utilizing information from sub specs)
+
+=item * Tab completion for bash
+
+=back
+
 This module uses L<Log::Any> logging framework. Use something like
 L<Log::Any::App>, etc to see more logging statements for debugging.
+
+Note: If you use this module, make sure that your sub does not return status
+code above 555, because OS exit code is set to $code-300.
 
 =head1 FUNCTIONS
 
@@ -691,6 +730,14 @@ bash_complete_spec_arg() recursively) based on context.
 If set to 1, subcommand like a-b-c will be converted to a_b_c. This is for
 convenience when typing in command line.
 
+=item * undo => BOOL (optional, default 0)
+
+If set to 1, --undo and --undo-dir will be added to command-line options. --undo
+is used to perform undo: -undo and -undo_data will be passed to subroutine, an
+error will be thrown if subroutine does not have 'undo' features. --undo-dir is
+used to set location of undo data (default ~/.undo; undo directory will be
+created if not exists; each subroutine will have its own subdir here).
+
 =back
 
 run() can also perform completion for bash (if Sub::Spec::BashComplete is
@@ -701,6 +748,19 @@ available). To get bash completion for your B<perlprog>, just type this in bash:
 You can add that line in bash startup file (~/.bashrc, /etc/bash.bashrc, etc).
 
 =head1 FAQ
+
+=head2 How does Sub::Spec::CmdLine compare with other CLI-app frameworks?
+
+B<Differences>: Sub::Spec::CmdLine is part of a more general subroutine metadata
+framework. Aside from a command-line app, your sub spec is also usable for other
+stuffs, like creating REST API's, remote subroutines, or documentation.
+Sub::Spec::CmdLine is not OO and does not offer plugins (as of now).
+
+B<Pros>: App::Cmd and App::Rad currently does not offer bash completion feature.
+Sub::Spec::CmdLine offers passing arguments as YAML.
+
+B<Cons>: inadequate documentation/tutorial, no configuration file support yet
+(coming soon).
 
 =head2 Why is nonscalar arguments parsed as YAML instead of JSON/etc?
 
@@ -718,6 +778,8 @@ as JSON can be added upon request.
 
 =head1 SEE ALSO
 
+L<App::Cmd>, L<App::Rad>
+
 L<Sub::Spec>
 
 L<MooseX::Getopt>
@@ -728,13 +790,10 @@ Steven Haryanto <stevenharyanto@gmail.com>
 
 =head1 COPYRIGHT AND LICENSE
 
-This software is copyright (c) 2011 by Steven Haryanto.
+This software is copyright (c) 2012 by Steven Haryanto.
 
 This is free software; you can redistribute it and/or modify it under
 the same terms as the Perl 5 programming language system itself.
 
 =cut
-
-
-__END__
 

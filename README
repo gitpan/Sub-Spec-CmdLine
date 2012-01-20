@@ -2,7 +2,7 @@ NAME
     Sub::Spec::CmdLine - Access Perl subs via command line
 
 VERSION
-    version 0.36
+    version 0.37
 
 SYNOPSIS
     In your module:
@@ -54,11 +54,31 @@ SYNOPSIS
      % script.pl bar --blah ...
 
 DESCRIPTION
+    NOTICE: This module and the Sub::Spec standard is deprecated as of Jan
+    2012. Rinci is the new specification to replace Sub::Spec, it is about
+    95% compatible with Sub::Spec, but corrects a few issues and is more
+    generic. "Perinci::*" is the Perl implementation for Rinci and many of
+    its modules can handle existing Sub::Spec sub specs. See
+    Perinci::CmdLine which supersedes this module.
+
     This module utilize sub specs (as defined by Sub::Spec) to let your subs
     be accessible from the command-line.
 
+    This can be used to create a command-line application easily. What
+    you'll get:
+
+    *   Command-line parsing (currently using Getopt::Long, with some
+        tweaks)
+
+    *   Help message (utilizing information from sub specs)
+
+    *   Tab completion for bash
+
     This module uses Log::Any logging framework. Use something like
     Log::Any::App, etc to see more logging statements for debugging.
+
+    Note: If you use this module, make sure that your sub does not return
+    status code above 555, because OS exit code is set to $code-300.
 
 FUNCTIONS
     None of the functions are exported by default, but they are exportable.
@@ -198,6 +218,15 @@ FUNCTIONS
         If set to 1, subcommand like a-b-c will be converted to a_b_c. This
         is for convenience when typing in command line.
 
+    *   undo => BOOL (optional, default 0)
+
+        If set to 1, --undo and --undo-dir will be added to command-line
+        options. --undo is used to perform undo: -undo and -undo_data will
+        be passed to subroutine, an error will be thrown if subroutine does
+        not have 'undo' features. --undo-dir is used to set location of undo
+        data (default ~/.undo; undo directory will be created if not exists;
+        each subroutine will have its own subdir here).
+
     run() can also perform completion for bash (if Sub::Spec::BashComplete
     is available). To get bash completion for your perlprog, just type this
     in bash:
@@ -208,6 +237,19 @@ FUNCTIONS
     etc).
 
 FAQ
+  How does Sub::Spec::CmdLine compare with other CLI-app frameworks?
+    Differences: Sub::Spec::CmdLine is part of a more general subroutine
+    metadata framework. Aside from a command-line app, your sub spec is also
+    usable for other stuffs, like creating REST API's, remote subroutines,
+    or documentation. Sub::Spec::CmdLine is not OO and does not offer
+    plugins (as of now).
+
+    Pros: App::Cmd and App::Rad currently does not offer bash completion
+    feature. Sub::Spec::CmdLine offers passing arguments as YAML.
+
+    Cons: inadequate documentation/tutorial, no configuration file support
+    yet (coming soon).
+
   Why is nonscalar arguments parsed as YAML instead of JSON/etc?
     I think YAML is nicer in command-line because quotes are optional in a
     few places:
@@ -222,6 +264,8 @@ FAQ
     to parse as JSON can be added upon request.
 
 SEE ALSO
+    App::Cmd, App::Rad
+
     Sub::Spec
 
     MooseX::Getopt
@@ -230,7 +274,7 @@ AUTHOR
     Steven Haryanto <stevenharyanto@gmail.com>
 
 COPYRIGHT AND LICENSE
-    This software is copyright (c) 2011 by Steven Haryanto.
+    This software is copyright (c) 2012 by Steven Haryanto.
 
     This is free software; you can redistribute it and/or modify it under
     the same terms as the Perl 5 programming language system itself.
